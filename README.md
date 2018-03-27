@@ -11,6 +11,11 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/afs/cern.ch/work/c/cmcginn/public/Packa
 I recommend above be put in your .bashrc file so it is not necessary every session
 
 Notes: Using gcc 6.3.0, root 6.10.09, (comes for free with cmsenv in CMSSW_10_0_5)
+To use w/ CMSSW_10_0_5:
+cmsrel CMSSW_10_0_5
+cd CMSSW_10_0_5/src
+cmsenv
+then cd to dir and make
 
 To test:
 
