@@ -5,8 +5,6 @@
 #include "TTree.h"
 #include "TH1D.h"
 #include "TH2D.h"
-#include "TUnfold.h"
-#include "TUnfoldDensity.h"
 #include "TMath.h"
 #include "TRandom3.h"
 #include "TCanvas.h"
@@ -61,29 +59,29 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   const Float_t absEtaBinsLow[nAbsEtaBins] = {0.0};
   const Float_t absEtaBinsHi[nAbsEtaBins] = {2.0};
 
-  const Int_t nTruthBins[nCentBins] = {11, 11, 11, 11};  
-  const Float_t truthBins5090[nTruthBins[0]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
-  const Float_t truthBins3050[nTruthBins[1]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
-  const Float_t truthBins1030[nTruthBins[2]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
-  const Float_t truthBins010[nTruthBins[3]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Int_t nTruthBins[nCentBins] = {12, 12, 12, 12};
+  const Float_t truthBins5090[nTruthBins[0]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700};
+  const Float_t truthBins3050[nTruthBins[1]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700};
+  const Float_t truthBins1030[nTruthBins[2]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700};
+  const Float_t truthBins010[nTruthBins[3]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700};
 
-  const Int_t nRecoBins[nCentBins] = {9, 9, 9, 9};  
-  const Float_t recoBins5090[nRecoBins[0]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t recoBins3050[nRecoBins[1]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t recoBins1030[nRecoBins[2]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t recoBins010[nRecoBins[3]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};  
+  const Int_t nRecoBins[nCentBins] = {10, 10, 10, 10};  
+  const Float_t recoBins5090[nRecoBins[0]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t recoBins3050[nRecoBins[1]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t recoBins1030[nRecoBins[2]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t recoBins010[nRecoBins[3]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};  
 
-  const Int_t nTruthBinsReduced[nCentBins] = {6, 6, 6, 6};  
-  const Float_t truthBinsReduced5090[nTruthBinsReduced[0]+1] = {100, 200, 300, 400, 500, 600, 700};
-  const Float_t truthBinsReduced3050[nTruthBinsReduced[1]+1] = {100, 200, 300, 400, 500, 600, 700};
-  const Float_t truthBinsReduced1030[nTruthBinsReduced[2]+1] = {100, 200, 300, 400, 500, 600, 700};
-  const Float_t truthBinsReduced010[nTruthBinsReduced[3]+1] = {100, 200, 300, 400, 500, 600, 700};
+  const Int_t nTruthBinsReduced[nCentBins] = {7, 7, 7, 7};  
+  const Float_t truthBinsReduced5090[nTruthBinsReduced[0]+1] = {100, 200, 300, 400, 500, 600, 700, 800};
+  const Float_t truthBinsReduced3050[nTruthBinsReduced[1]+1] = {100, 200, 300, 400, 500, 600, 700, 800};
+  const Float_t truthBinsReduced1030[nTruthBinsReduced[2]+1] = {100, 200, 300, 400, 500, 600, 700, 800};
+  const Float_t truthBinsReduced010[nTruthBinsReduced[3]+1] = {100, 200, 300, 400, 500, 600, 700, 800};
 
-  const Int_t nRecoBinsReduced[nCentBins] = {4, 4, 4, 4};  
-  const Float_t recoBinsReduced5090[nRecoBinsReduced[0]+1] = {200, 300, 400, 500, 600};
-  const Float_t recoBinsReduced3050[nRecoBinsReduced[1]+1] = {200, 300, 400, 500, 600};
-  const Float_t recoBinsReduced1030[nRecoBinsReduced[2]+1] = {200, 300, 400, 500, 600};
-  const Float_t recoBinsReduced010[nRecoBinsReduced[3]+1] = {200, 300, 400, 500, 600};  
+  const Int_t nRecoBinsReduced[nCentBins] = {5, 5, 5, 5};  
+  const Float_t recoBinsReduced5090[nRecoBinsReduced[0]+1] = {200, 300, 400, 500, 600, 700};
+  const Float_t recoBinsReduced3050[nRecoBinsReduced[1]+1] = {200, 300, 400, 500, 600, 700};
+  const Float_t recoBinsReduced1030[nRecoBinsReduced[2]+1] = {200, 300, 400, 500, 600, 700};
+  const Float_t recoBinsReduced010[nRecoBinsReduced[3]+1] = {200, 300, 400, 500, 600, 700};  
 
   Float_t truthBins[nCentBins][100];
   Float_t recoBins[nCentBins][100];

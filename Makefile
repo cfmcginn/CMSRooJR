@@ -27,7 +27,7 @@ mkdirPdf:
 	$(MKDIR_PDF)
 
 buildAndTest: src/buildAndTest.C
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -lUnfold -o bin/buildAndTest.exe src/buildAndTest.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -o bin/buildAndTest.exe src/buildAndTest.C
 
 clean:
 	rm -f ./*~
