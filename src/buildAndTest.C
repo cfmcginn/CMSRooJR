@@ -12,6 +12,7 @@
 #include "TCanvas.h"
 #include "TPad.h"
 #include "TStyle.h"
+#include "TLatex.h"
 
 #include "src/RooUnfoldResponse.h"
 #include "src/RooUnfoldBayes.h"
@@ -22,11 +23,16 @@
 #include "include/kirchnerPalette.h"
 #include "include/doGlobalDebug.h"
 
+#include "include/smearingFuncs.h"
 #include "include/getLogBins.h"
 #include "include/getLinBins.h"
 
 int buildAndTest(const std::string inDataName, const std::string inMCName, const bool isPP, const Int_t rVal, const Bool_t isBayes)
 {
+  TLatex* label_p = new TLatex();
+  label_p->SetTextFont(43);
+  label_p->SetTextSize(7);
+
   TDatime* date = new TDatime();
   kirchnerPalette col;
   TRandom3* randGen_p = new TRandom3(0);
@@ -34,6 +40,17 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   if(isPP) ppOrPbPbStr = "PP";
   TFile* outFile_p = new TFile(("output/unfoldTest_" + ppOrPbPbStr + ".root").c_str(), "RECREATE");
   
+  std::string mcTreeString = "akCs" + std::to_string(rVal) + "PU3PFFlowJetAnalyzer/akCs" + std::to_string(rVal) + "PU3PFFlowJetAnalyzerOUT";
+  if(isPP) mcTreeString = "ak" + std::to_string(rVal) + "PFJetAnalyzer/ak" + std::to_string(rVal) + "PFJetAnalyzerOUT";
+
+  const Float_t jtPtLowPP = 110.;
+  const Float_t jtPtLowPbPb = 140.;
+  Float_t jtPtLowTemp = jtPtLowPP;
+  if(!isPP) jtPtLowTemp = jtPtLowPbPb;
+  const Float_t jtPtLow = jtPtLowTemp;
+
+  const Int_t rValReducedCut = 6;
+
   const Int_t nCentBins = 4;
   const Int_t centBinsLow[nCentBins] = {50, 30, 10, 0};
   const Int_t centBinsHi[nCentBins] = {90, 50, 30, 10};
@@ -44,11 +61,11 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   const Float_t absEtaBinsLow[nAbsEtaBins] = {0.0};
   const Float_t absEtaBinsHi[nAbsEtaBins] = {2.0};
 
-  const Int_t nTruthBins[nCentBins] = {10, 10, 10, 10};  
-  const Float_t truthBins5090[nTruthBins[0]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t truthBins3050[nTruthBins[1]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t truthBins1030[nTruthBins[2]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
-  const Float_t truthBins010[nTruthBins[3]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
+  const Int_t nTruthBins[nCentBins] = {11, 11, 11, 11};  
+  const Float_t truthBins5090[nTruthBins[0]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t truthBins3050[nTruthBins[1]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t truthBins1030[nTruthBins[2]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
+  const Float_t truthBins010[nTruthBins[3]+1] = {100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650};
 
   const Int_t nRecoBins[nCentBins] = {9, 9, 9, 9};  
   const Float_t recoBins5090[nRecoBins[0]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
@@ -56,22 +73,54 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   const Float_t recoBins1030[nRecoBins[2]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};
   const Float_t recoBins010[nRecoBins[3]+1] = {150, 200, 250, 300, 350, 400, 450, 500, 550, 600};  
 
+  const Int_t nTruthBinsReduced[nCentBins] = {6, 6, 6, 6};  
+  const Float_t truthBinsReduced5090[nTruthBinsReduced[0]+1] = {100, 200, 300, 400, 500, 600, 700};
+  const Float_t truthBinsReduced3050[nTruthBinsReduced[1]+1] = {100, 200, 300, 400, 500, 600, 700};
+  const Float_t truthBinsReduced1030[nTruthBinsReduced[2]+1] = {100, 200, 300, 400, 500, 600, 700};
+  const Float_t truthBinsReduced010[nTruthBinsReduced[3]+1] = {100, 200, 300, 400, 500, 600, 700};
+
+  const Int_t nRecoBinsReduced[nCentBins] = {4, 4, 4, 4};  
+  const Float_t recoBinsReduced5090[nRecoBinsReduced[0]+1] = {200, 300, 400, 500, 600};
+  const Float_t recoBinsReduced3050[nRecoBinsReduced[1]+1] = {200, 300, 400, 500, 600};
+  const Float_t recoBinsReduced1030[nRecoBinsReduced[2]+1] = {200, 300, 400, 500, 600};
+  const Float_t recoBinsReduced010[nRecoBinsReduced[3]+1] = {200, 300, 400, 500, 600};  
+
   Float_t truthBins[nCentBins][100];
   Float_t recoBins[nCentBins][100];
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
-    for(Int_t bI = 0; bI < nTruthBins[cI]+1; ++bI){
-      if(cI == 0) truthBins[0][bI] = truthBins5090[bI];
-      else if(cI == 1) truthBins[1][bI] = truthBins3050[bI];
-      else if(cI == 2) truthBins[2][bI] = truthBins1030[bI];
-      else if(cI == 3) truthBins[3][bI] = truthBins010[bI];
+    if(rVal <= rValReducedCut){
+      for(Int_t bI = 0; bI < nTruthBins[cI]+1; ++bI){
+	if(cI == 0) truthBins[0][bI] = truthBins5090[bI];
+	else if(cI == 1) truthBins[1][bI] = truthBins3050[bI];
+	else if(cI == 2) truthBins[2][bI] = truthBins1030[bI];
+	else if(cI == 3) truthBins[3][bI] = truthBins010[bI];
+      }
+    }
+    else{
+      for(Int_t bI = 0; bI < nTruthBinsReduced[cI]+1; ++bI){
+	if(cI == 0) truthBins[0][bI] = truthBinsReduced5090[bI];
+	else if(cI == 1) truthBins[1][bI] = truthBinsReduced3050[bI];
+	else if(cI == 2) truthBins[2][bI] = truthBinsReduced1030[bI];
+	else if(cI == 3) truthBins[3][bI] = truthBinsReduced010[bI];
+      }
     }
 
-    for(Int_t bI = 0; bI < nRecoBins[cI]+1; ++bI){
-      if(cI == 0) recoBins[0][bI] = recoBins5090[bI];
-      else if(cI == 1) recoBins[1][bI] = recoBins3050[bI];
-      else if(cI == 2) recoBins[2][bI] = recoBins1030[bI];
-      else if(cI == 3) recoBins[3][bI] = recoBins010[bI];
+    if(rVal <= rValReducedCut){
+      for(Int_t bI = 0; bI < nRecoBins[cI]+1; ++bI){
+	if(cI == 0) recoBins[0][bI] = recoBins5090[bI];
+	else if(cI == 1) recoBins[1][bI] = recoBins3050[bI];
+	else if(cI == 2) recoBins[2][bI] = recoBins1030[bI];
+	else if(cI == 3) recoBins[3][bI] = recoBins010[bI];
+      }
+    }     
+    else{
+      for(Int_t bI = 0; bI < nRecoBinsReduced[cI]+1; ++bI){
+	if(cI == 0) recoBins[0][bI] = recoBinsReduced5090[bI];
+	else if(cI == 1) recoBins[1][bI] = recoBinsReduced3050[bI];
+	else if(cI == 2) recoBins[2][bI] = recoBinsReduced1030[bI];
+	else if(cI == 3) recoBins[3][bI] = recoBinsReduced010[bI];
+      }
     }
   }
 
@@ -94,25 +143,45 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
     for(Int_t aI = 0; aI < nAbsEtaBins; ++aI){
       const std::string absEtaStr = "AbsEta" + prettyString(absEtaBinsLow[aI], true, 1) + "to" + prettyString(absEtaBinsHi[aI], true, 1);
       const std::string totStr = centStr + "_" + absEtaStr;
-      
-      reco_h[cI][aI] = new TH1D(("reco_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
-      recoSymm_h[cI][aI] = new TH1D(("recoSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
-      truth_h[cI][aI] = new TH1D(("truth_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
-      recoPerp_h[cI][aI] = new TH1D(("recoPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
-      recoSymmPerp_h[cI][aI] = new TH1D(("recoSymmPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
-      truthPerp_h[cI][aI] = new TH1D(("truthPerp_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
-      
-      responseSymm_h[cI][aI] = new TH2D(("responseSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nTruthBins[cI], truthBins[cI], nTruthBins[cI], truthBins[cI]);
-      responseAsymm_h[cI][aI] = new TH2D(("responseAsymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nRecoBins[cI], recoBins[cI], nTruthBins[cI], truthBins[cI]);
 
-      rooResponse_h[cI][aI] = new RooUnfoldResponse(("rooResponse_" + totStr + "_h").c_str(), "");
-      rooResponse_h[cI][aI]->Setup(reco_h[cI][aI], truth_h[cI][aI]);
-      
-      recoData_h[cI][aI] = new TH1D(("recoData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
-      recoSymmData_h[cI][aI] = new TH1D(("recoSymmData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
-      
+      if(rVal <= rValReducedCut){
+	reco_h[cI][aI] = new TH1D(("reco_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
+	recoSymm_h[cI][aI] = new TH1D(("recoSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
+	truth_h[cI][aI] = new TH1D(("truth_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
+	recoPerp_h[cI][aI] = new TH1D(("recoPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
+	recoSymmPerp_h[cI][aI] = new TH1D(("recoSymmPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
+	truthPerp_h[cI][aI] = new TH1D(("truthPerp_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
+	
+	responseSymm_h[cI][aI] = new TH2D(("responseSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nTruthBins[cI], truthBins[cI], nTruthBins[cI], truthBins[cI]);
+	responseAsymm_h[cI][aI] = new TH2D(("responseAsymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nRecoBins[cI], recoBins[cI], nTruthBins[cI], truthBins[cI]);
+	
+	rooResponse_h[cI][aI] = new RooUnfoldResponse(("rooResponse_" + totStr + "_h").c_str(), "");
+	rooResponse_h[cI][aI]->Setup(reco_h[cI][aI], truth_h[cI][aI]);
+	
+	recoData_h[cI][aI] = new TH1D(("recoData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBins[cI], recoBins[cI]);
+	recoSymmData_h[cI][aI] = new TH1D(("recoSymmData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBins[cI], truthBins[cI]);
+      }
+      else{
+	reco_h[cI][aI] = new TH1D(("reco_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBinsReduced[cI], recoBins[cI]);
+	recoSymm_h[cI][aI] = new TH1D(("recoSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBinsReduced[cI], truthBins[cI]);
+	truth_h[cI][aI] = new TH1D(("truth_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBinsReduced[cI], truthBins[cI]);
+	recoPerp_h[cI][aI] = new TH1D(("recoPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBinsReduced[cI], recoBins[cI]);
+	recoSymmPerp_h[cI][aI] = new TH1D(("recoSymmPerp_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBinsReduced[cI], truthBins[cI]);
+	truthPerp_h[cI][aI] = new TH1D(("truthPerp_" + totStr + "_h").c_str(), ";Truth. Jet p_{T};Counts", nTruthBinsReduced[cI], truthBins[cI]);
+	
+	responseSymm_h[cI][aI] = new TH2D(("responseSymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nTruthBinsReduced[cI], truthBins[cI], nTruthBinsReduced[cI], truthBins[cI]);
+	responseAsymm_h[cI][aI] = new TH2D(("responseAsymm_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Truth Jet p_{T}", nRecoBinsReduced[cI], recoBins[cI], nTruthBinsReduced[cI], truthBins[cI]);
+	
+	rooResponse_h[cI][aI] = new RooUnfoldResponse(("rooResponse_" + totStr + "_h").c_str(), "");
+	rooResponse_h[cI][aI]->Setup(reco_h[cI][aI], truth_h[cI][aI]);
+	
+	recoData_h[cI][aI] = new TH1D(("recoData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nRecoBinsReduced[cI], recoBins[cI]);
+	recoSymmData_h[cI][aI] = new TH1D(("recoSymmData_" + totStr + "_h").c_str(), ";Reco. Jet p_{T};Counts", nTruthBinsReduced[cI], truthBins[cI]);
+      }
+
       centerTitles({reco_h[cI][aI], recoSymm_h[cI][aI], truth_h[cI][aI], recoPerp_h[cI][aI], recoSymmPerp_h[cI][aI], truthPerp_h[cI][aI], responseSymm_h[cI][aI], responseAsymm_h[cI][aI], recoData_h[cI][aI], recoSymmData_h[cI][aI]});
       setSumW2({reco_h[cI][aI], recoSymm_h[cI][aI], truth_h[cI][aI], recoPerp_h[cI][aI], recoSymmPerp_h[cI][aI], truthPerp_h[cI][aI], responseSymm_h[cI][aI], responseAsymm_h[cI][aI], recoData_h[cI][aI], recoSymmData_h[cI][aI]});
+
     }
   }
 
@@ -126,8 +195,6 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   Float_t jteta_[nMaxJets];
   Float_t refpt_[nMaxJets];
 
-  std::string mcTreeString = "akCs" + std::to_string(rVal) + "PU3PFFlowJetAnalyzer/akCs" + std::to_string(rVal) + "PU3PFFlowJetAnalyzerOUT";
-  if(isPP) mcTreeString = "ak" + std::to_string(rVal) + "PFJetAnalyzer/ak" + std::to_string(rVal) + "PFJetAnalyzerOUT";
   TTree* inResponseTree_p = (TTree*)inMCFile_p->Get(mcTreeString.c_str());
 
   inResponseTree_p->SetBranchStatus("*", 0);
@@ -170,11 +237,23 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
     bool isPerp = randGen_p->Uniform(0.0, 1.0) > 0.9;
     
     for(Int_t jI = 0; jI < nref_; ++jI){
+      if(jtpt_[jI] < jtPtLow) continue;
+
       for(unsigned int cI = 0; cI < centPos.size(); ++cI){
-	bool goodReco = jtpt_[jI] >= 150. && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
-	bool goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
-	//bool goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
-	bool goodTruth = refpt_[jI] >= truthBins[centPos.at(cI)][0] && refpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
+	bool goodReco = false;
+	bool goodReco2 = false;
+	bool goodTruth = false;
+
+	if(rVal <= rValReducedCut){
+	  goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
+	  goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
+	  goodTruth = refpt_[jI] >= truthBins[centPos.at(cI)][0] && refpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
+	}
+	else{
+	  goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBinsReduced[centPos.at(cI)]];
+	  goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBinsReduced[centPos.at(cI)]];
+	  goodTruth = refpt_[jI] >= truthBins[centPos.at(cI)][0] && refpt_[jI] < truthBins[centPos.at(cI)][nTruthBinsReduced[centPos.at(cI)]];
+	}
 
 	Int_t absEtaPos = -1;
 	for(Int_t aI = 0; aI < nAbsEtaBins; ++aI){
@@ -258,6 +337,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
     }
     
     for(Int_t jI = 0; jI < nref_; ++jI){
+      if(jtpt_[jI] < jtPtLow) continue;
+
       for(unsigned int cI = 0; cI < centPos.size(); ++cI){
         Int_t absEtaPos = -1;
         for(Int_t aI = 0; aI < nAbsEtaBins; ++aI){
@@ -270,9 +351,18 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	if(absEtaPos < 0) std::cout << "Absetapos " << absEtaPos << std::endl;
 	if(absEtaPos < 0) continue;
 
-	bool goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
-	bool goodReco = jtpt_[jI] >= 150. && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
-	//bool goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
+	bool goodReco = false;
+	bool goodReco2 = false;
+
+	if(rVal <= rValReducedCut){
+	  goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBins[centPos.at(cI)]];
+	  goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBins[centPos.at(cI)]];
+	}
+	else{
+	  goodReco = jtpt_[jI] >= recoBins[centPos.at(cI)][0] && jtpt_[jI] < recoBins[centPos.at(cI)][nRecoBinsReduced[centPos.at(cI)]];
+	  goodReco2 = jtpt_[jI] >= truthBins[centPos.at(cI)][0] && jtpt_[jI] < truthBins[centPos.at(cI)][nTruthBinsReduced[centPos.at(cI)]];
+	}
+
 	if(goodReco) recoData_h[centPos.at(cI)][absEtaPos]->Fill(jtpt_[jI]);
 	if(goodReco2) recoSymmData_h[centPos.at(cI)][absEtaPos]->Fill(jtpt_[jI]);
       }     
@@ -322,17 +412,19 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
       
       TH1D* prevHist_p = (TH1D*)(recoData_h[cI][aI]->Clone("prevHist"));
       if(!isBayes) prevHist_p = (TH1D*)(recoSymmData_h[cI][aI]->Clone("prevHist"));
-      TH1D* prevDHist_p = NULL;
-      
+
       Int_t bayesStartVal = 1;
       Int_t bayesEndVal = 11;
-      if(!isBayes) bayesEndVal = nTruthBins[cI];
+      if(!isBayes){
+	if(rVal <= rValReducedCut) bayesEndVal = nTruthBins[cI];
+	else bayesEndVal = nTruthBinsReduced[cI];
+      }
 
       if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
     
       for(Int_t bI = bayesStartVal; bI <= bayesEndVal; ++bI){
 	TCanvas* canv_p = new TCanvas(("build_" + totStr + "_Bayes" + std::to_string(bI) + "_c").c_str(), "", 4*300, 2*300);
-	const Int_t nPads = 13;
+	const Int_t nPads = 12;
 	TPad* pads[nPads];
 	canv_p->SetTopMargin(0.0);
 	canv_p->SetRightMargin(0.0);
@@ -345,8 +437,6 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	Double_t yValsHi[5] = {0.675, 1.0, 0.5, 0.5, .175};
 	
 	for(Int_t pI = 0; pI < nPads; ++pI){
-	  if(isBayes && pI == 12) continue;
-
 	  canv_p->cd();
 	  if(pI == 0) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[1], xValsHi[0], yValsHi[1]);
 	  else if(pI == 1) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[0], xValsHi[0], yValsHi[0]);
@@ -356,15 +446,11 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	  else if(pI == 5) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[2], yValsLow[0], xValsHi[2], yValsHi[0]);
 	  else if(pI == 6) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[3], yValsLow[1], xValsHi[3], yValsHi[1]);
 	  else if(pI == 7) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[3], yValsLow[0], xValsHi[3], yValsHi[0]);
-	  else if(pI == 8){
-	    if(isBayes) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[2], xValsHi[0], yValsHi[2]);
-	    else pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[3], xValsHi[0], yValsHi[3]);
-	  }
+	  else if(pI == 8) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[2], xValsHi[0], yValsHi[2]);
 	  else if(pI == 9) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[1], yValsLow[2], xValsHi[1], yValsHi[2]);
 	  else if(pI == 10) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[2], yValsLow[2], xValsHi[2], yValsHi[2]);
 	  else if(pI == 11) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[3], yValsLow[2], xValsHi[3], yValsHi[2]);
-	  else if(pI == 12) pads[pI] = new TPad(("pad" + std::to_string(pI)).c_str(), "", xValsLow[0], yValsLow[4], xValsHi[0], yValsHi[4]);
-	  
+
 	  pads[pI]->Draw("SAME");
 	  pads[pI]->cd();
 	  if(pI < 8) pads[pI]->SetRightMargin(0.01);
@@ -374,8 +460,6 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	    else pads[pI]->SetBottomMargin(pads[pI]->GetLeftMargin()*2.);
 	  }
 	  else pads[pI]->SetBottomMargin(pads[pI]->GetLeftMargin()*2.);
-
-	  if(!isBayes && pI == 8) pads[pI]->SetBottomMargin(0.01);
 	}
 
 	if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
@@ -398,6 +482,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	
 	RooUnfoldBayes* tempBayes = new RooUnfoldBayes(rooResponse_h[cI][aI], reco_h[cI][aI], bI);
 	RooUnfoldSvd* tempSvd = new RooUnfoldSvd(rooResponse_h[cI][aI], reco_h[cI][aI], bI);
+	tempBayes->SetVerbose(0);
+	tempSvd->SetVerbose(0);
 
 	TH1D* tempReco = NULL;
 	if(isBayes) tempReco = (TH1D*)tempBayes->Hreco(RooUnfold::kCovToy);
@@ -458,6 +544,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	
 	tempBayes = new RooUnfoldBayes(rooResponse_h[cI][aI], recoPerp_h[cI][aI], bI);
 	tempSvd = new RooUnfoldSvd(rooResponse_h[cI][aI], recoPerp_h[cI][aI], bI);
+	tempBayes->SetVerbose(0);
+	tempSvd->SetVerbose(0);
 
 	tempReco = NULL;
 	if(isBayes) tempReco = (TH1D*)tempBayes->Hreco(RooUnfold::kCovToy);
@@ -504,6 +592,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 
 	tempBayes = new RooUnfoldBayes(rooResponse_h[cI][aI], recoData_h[cI][aI], bI);
 	tempSvd = new RooUnfoldSvd(rooResponse_h[cI][aI], recoData_h[cI][aI], bI);
+	tempBayes->SetVerbose(0);
+	tempSvd->SetVerbose(0);
 
 	tempReco = NULL;
 	if(isBayes) tempReco = (TH1D*)tempBayes->Hreco(RooUnfold::kCovToy);
@@ -661,35 +751,6 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	  TH1D* temp_h = (TH1D*)(tempSvd->Impl()->GetD());
 	  temp_h->DrawCopy("HIST E1");
 	  gPad->SetLogy();
-
-	  if(prevDHist_p != NULL){
-	    canv_p->cd();
-	    pads[12]->cd();
-
-	    prevDHist_p->Divide(temp_h);
-	    prevDHist_p->SetMinimum(0.9);
-	    prevDHist_p->SetMaximum(1.1);
-
-	    prevDHist_p->GetYaxis()->SetTitle("Ratio");
-	    prevDHist_p->SetMarkerStyle(24);
-	    prevDHist_p->SetMarkerSize(0.8);
-	    prevDHist_p->SetMarkerColor(1);
-	    prevDHist_p->SetLineColor(1);
-
-	    prevDHist_p->GetXaxis()->SetTitleFont(43);
-	    prevDHist_p->GetYaxis()->SetTitleFont(43);
-	    prevDHist_p->GetXaxis()->SetLabelFont(43);
-	    prevDHist_p->GetYaxis()->SetLabelFont(43);
-
-	    prevDHist_p->GetXaxis()->SetTitleSize(10);
-	    prevDHist_p->GetYaxis()->SetTitleSize(10);
-	    prevDHist_p->GetXaxis()->SetLabelSize(10);
-	    prevDHist_p->GetYaxis()->SetLabelSize(10);
-
-	    prevDHist_p->DrawCopy("HIST E1 P");
-	  }
-
-	  prevDHist_p = (TH1D*)temp_h->Clone(("prevDHist_" + std::to_string(bI)).c_str());
 	}
 
 	canv_p->cd();
@@ -828,7 +889,15 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	gStyle->SetPaintTextFormat("1.3f");
 	covariancePearson->SetMaximum(max + (max - min)/10.);
 	covariancePearson->SetMinimum(min - (max - min)/10.);
-	covariancePearson->DrawCopy("COLZ TEXT");
+	covariancePearson->DrawCopy("COLZ");
+
+	for(Int_t bIX = 0; bIX < covariancePearson->GetNbinsX(); ++bIX){
+	  for(Int_t bIY = 0; bIY < covariancePearson->GetNbinsY(); ++bIY){
+	    Double_t outVal = covariancePearson->GetBinContent(bIX+1, bIY+1);
+	    if(TMath::Abs(outVal) > .1) label_p->DrawLatex(bIX+.2, bIY+.5, ("#bf{#color[2]{" + prettyString(outVal, 3, false) + "}}").c_str());
+	    else label_p->DrawLatex(bIX+.1, bIY+.5, prettyString(outVal, 3, false).c_str());
+	  }
+	}
 	
 	delete covariancePearson;
 	
@@ -841,8 +910,6 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 
 	canv_p->SaveAs(("pdfDir/build_R" + std::to_string(rVal) + "_" + totStr + "_" + bayesStr + "_" + std::to_string(date->GetDate()) + ".pdf").c_str());
 	for(Int_t pI = 0; pI < nPads; ++pI){
-	  if(isBayes && pI == 12) continue;
-
 	  delete pads[pI];
 	}
       
@@ -885,6 +952,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
   delete randGen_p;
   delete date;
 
+  delete label_p;
+
   return 0;
 }
 
@@ -895,13 +964,13 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  const Int_t nRParam = 1;
-  //  const Int_t rParam[nRParam] = {3, 4, 6, 8, 10};
-  const Int_t rParam[nRParam] = {4};
+  const Int_t nRParam = 5;
+  const Int_t rParam[nRParam] = {3, 4, 6, 8, 10};
+  //  const Int_t rParam[nRParam] = {4};
 
   int retVal = 0;
   for(Int_t rI = 0; rI < nRParam; ++rI){
-    //    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], true);
+    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], true);
     retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], false);
   }
   return retVal;
