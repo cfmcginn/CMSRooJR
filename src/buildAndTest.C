@@ -20,8 +20,10 @@
 #include "include/histDefUtility.h"
 #include "include/plotUtilities.h"
 #include "include/kirchnerPalette.h"
-
 #include "include/doGlobalDebug.h"
+
+#include "include/getLogBins.h"
+#include "include/getLinBins.h"
 
 int buildAndTest(const std::string inDataName, const std::string inMCName, const bool isPP, const Int_t rVal, const Bool_t isBayes)
 {
