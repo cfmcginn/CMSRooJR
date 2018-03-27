@@ -1,6 +1,6 @@
 #ifndef DOGLOBALDEBUG_H
 #define DOGLOBALDEBUG_H
 
-bool doGlobalDebug = true;
+bool doGlobalDebug = false;
 
 #endif

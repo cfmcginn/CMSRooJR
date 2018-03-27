@@ -394,16 +394,12 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	
 	truthPerp_h[cI][aI]->DrawCopy("HIST E1 P");
 	
-	std::cout << "Bayes: " << bI << std::endl;
 	RooUnfoldBayes* tempBayes = new RooUnfoldBayes(rooResponse_h[cI][aI], reco_h[cI][aI], bI);
-	std::cout << "START NEW" << std::endl;
 	RooUnfoldSvd* tempSvd = new RooUnfoldSvd(rooResponse_h[cI][aI], reco_h[cI][aI], bI);
 
 	TH1D* tempReco = NULL;
-	std::cout << "START HRECO" << std::endl;
 	if(isBayes) tempReco = (TH1D*)tempBayes->Hreco(RooUnfold::kCovToy);
 	else tempReco = (TH1D*)tempSvd->Hreco(RooUnfold::kCovToy);
-	std::cout << "END HRECO" << std::endl;
 
 	if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
@@ -903,9 +899,7 @@ int main(int argc, char* argv[])
 
   int retVal = 0;
   for(Int_t rI = 0; rI < nRParam; ++rI){
-    //    std::cout << "DO BAYES " << rParam[rI] << std::endl;
     //    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], true);
-    std::cout << "DO SVD " << rParam[rI] << std::endl;
     retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], false);
   }
   return retVal;
