@@ -38,7 +38,7 @@ double getResForPtEtaCentAlgo(double pt, double eta, int cent, const std::string
 {
   double smearingErrFactor = 1.15;
 
-  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+  //  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   std::vector<int> centBinsLow;
   std::vector<int> centBinsHi;
@@ -48,7 +48,7 @@ double getResForPtEtaCentAlgo(double pt, double eta, int cent, const std::string
 
   double resVal = 0;
 
-  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+  //  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   if(algo.find("akCs3PU3PFFlow") != std::string::npos) getResForAKCs3PU3PFFlow(centBinsLow, centBinsHi, cParam, sParam, nParam);
   else if(algo.find("akCs3PU3PF") != std::string::npos && algo.find("Flow") == std::string::npos) getResForAKCs3PU3PF(centBinsLow, centBinsHi, cParam, sParam, nParam);
@@ -75,16 +75,16 @@ double getResForPtEtaCentAlgo(double pt, double eta, int cent, const std::string
   else if(algo.find("ak8PF") != std::string::npos) getResForAK8PF(centBinsLow, centBinsHi, cParam, sParam, nParam);
   else if(algo.find("ak10PF") != std::string::npos) getResForAK10PF(centBinsLow, centBinsHi, cParam, sParam, nParam);
 
-  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+  //  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   int centPos = getCentPos(cent, centBinsLow, centBinsHi);
   if(TMath::Abs(eta) < 2.0){
     
-    if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+    //    if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
     if(relAlgo.size() == 0){
-      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-      if(doGlobalDebug) std::cout << "nparam size, centpos, algo: " << nParam.size() << ", " << centPos << ", " << algo << std::endl;
+      //      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+      //      if(doGlobalDebug) std::cout << "nparam size, centpos, algo: " << nParam.size() << ", " << centPos << ", " << algo << std::endl;
 
       if(!doErr) resVal = TMath::Sqrt(cParam*cParam + sParam*sParam/pt + nParam.at(centPos)*nParam.at(centPos)/(pt*pt));
       else resVal = TMath::Sqrt((smearingErrFactor*smearingErrFactor*cParam*cParam - cParam*cParam + (smearingErrFactor*smearingErrFactor*sParam*sParam - sParam*sParam)/pt + (smearingErrFactor*smearingErrFactor*nParam.at(centPos)*nParam.at(centPos) - nParam.at(centPos)*nParam.at(centPos))/(pt*pt)));
@@ -96,7 +96,7 @@ double getResForPtEtaCentAlgo(double pt, double eta, int cent, const std::string
       double sParamRel = 0;
       std::vector<double> nParamRel;
 
-      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+      //      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
       if(algo.find("akCs3PU3PFFlow") != std::string::npos) getResForAKCs3PU3PFFlow(centBinsLowRel, centBinsHiRel, cParamRel, sParamRel, nParamRel);
       else if(algo.find("akCs3PU3PF") != std::string::npos && algo.find("Flow") == std::string::npos) getResForAKCs3PU3PF(centBinsLowRel, centBinsHiRel, cParamRel, sParamRel, nParamRel);
@@ -123,14 +123,14 @@ double getResForPtEtaCentAlgo(double pt, double eta, int cent, const std::string
       else if(algo.find("ak8PF") != std::string::npos) getResForAK8PF(centBinsLowRel, centBinsHiRel, cParamRel, sParamRel, nParamRel);      
       else if(algo.find("ak10PF") != std::string::npos) getResForAK10PF(centBinsLowRel, centBinsHiRel, cParamRel, sParamRel, nParamRel);      
 
-      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+      //      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
       if(doErrRel) resVal = TMath::Sqrt(cParam*cParam - cParamRel*cParamRel + (sParam*sParam - sParamRel*sParamRel)/pt + (nParam.at(centPos)*nParam.at(centPos) - nParamRel.at(centPos)*nParamRel.at(centPos))/(pt*pt));
       else resVal = TMath::Sqrt(cParam*cParam - cParamRel*cParamRel + (sParam*sParam - sParamRel*sParamRel)/pt + (nParam.at(centPos)*nParam.at(centPos) - nParamRel.at(centPos)*nParamRel.at(centPos))/(pt*pt));
     }
   }
 
-  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+  //  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   return resVal;
 }
