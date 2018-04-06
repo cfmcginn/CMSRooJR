@@ -25,8 +25,13 @@
 #include "include/getLogBins.h"
 #include "include/getLinBins.h"
 
-int buildAndTest(const std::string inDataName, const std::string inMCName, const bool isPP, const Int_t rVal, const Bool_t isBayes)
+#include "CustomCanvas.h"
+#include "TexSlides.C"
+
+int buildAndTest(const std::string inDataName, const std::string inMCName, const bool isPP, const Int_t rVal, const Bool_t isBayes, std::vector<std::vector<std::string>*>* hvv=0)
 {
+  if (hvv==0) hvv=new std::vector<std::vector<std::string>*>();
+
   TLatex* label_p = new TLatex();
   label_p->SetTextFont(43);
   label_p->SetTextSize(7);
@@ -421,7 +426,7 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
       if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
     
       for(Int_t bI = bayesStartVal; bI <= bayesEndVal; ++bI){
-	TCanvas* canv_p = new TCanvas(("build_" + totStr + "_Bayes" + std::to_string(bI) + "_c").c_str(), "", 4*300, 2*300);
+	CustomCanvas* canv_p = new CustomCanvas(("build_" + totStr + "_Bayes" + std::to_string(bI) + "_c").c_str(), "", 4*300, 2*300);
 	const Int_t nPads = 12;
 	TPad* pads[nPads];
 	canv_p->SetTopMargin(0.0);
@@ -911,6 +916,8 @@ int buildAndTest(const std::string inDataName, const std::string inMCName, const
 	  delete pads[pI];
 	}
       
+	hvv->push_back(canv_p->GetPointer());
+
 	delete canv_p;
       }
     }
@@ -961,6 +968,8 @@ int main(int argc, char* argv[])
     std::cout << "Usage: ./buildAndTest.exe <inData> <inMC> <isPP>" << std::endl;
     return 1;
   }
+  
+  std::vector<std::vector<std::string>*>* hvv=new std::vector<std::vector<std::string>*>();
 
   const Int_t nRParam = 5;
   const Int_t rParam[nRParam] = {3, 4, 6, 8, 10};
@@ -968,8 +977,12 @@ int main(int argc, char* argv[])
 
   int retVal = 0;
   for(Int_t rI = 0; rI < nRParam; ++rI){
-    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], true);
-    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], false);
+    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], true, hvv);
+    retVal += buildAndTest(argv[1], argv[2], std::stoi(argv[3]), rParam[rI], false, hvv);
   }
+
+  std::cout<<"Generating slides"<<std::endl;
+  TexSlides(hvv,"Slides.tex",1);
+
   return retVal;
 }
