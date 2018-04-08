@@ -17,7 +17,7 @@ MKDIR_PDF = mkdir -p $(PWD)/pdfDir
 
 #all: mkdirBin mkdirPdf mkdirOutput makeFullRAAHist_FromTree valgrindTest makeFirstRAAHist_FromTree makeFinalRAAHist_FromTree
 
-all: mkdirBin mkdirPdf mkdirOutput bin/makeFirstRAAHist_FromTree.exe bin/makeFinalRAAHist_FromTree.exe bin/makePlotValidation_FromTree.exe bin/v2AndV3.exe
+all: mkdirBin mkdirPdf mkdirOutput bin/makeFirstRAAHist_FromTree.exe bin/makeFinalRAAHist_FromTree.exe bin/makePlotValidation_FromTree.exe bin/v2AndV3.exe bin/rc.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -48,6 +48,9 @@ makeFirstRawRAAHist_FromTree: src/makeFirstRawRAAHist_FromTree.C
 
 bin/makeFinalRAAHist_FromTree.exe: src/makeFinalRAAHist_FromTree.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -lpthread -o bin/makeFinalRAAHist_FromTree.exe src/makeFinalRAAHist_FromTree.C
+
+bin/rc.exe: src/rc.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/rc.exe src/rc.C
 
 valgrindTest: src/valgrindTest.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -o bin/valgrindTest.exe src/valgrindTest.C
