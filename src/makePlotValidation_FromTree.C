@@ -105,6 +105,7 @@ void comboValidation(TH1* histTot_p, TH1* comboTot_p)
   histTot_p->GetYaxis()->SetTitleOffset(histTot_p->GetYaxis()->GetTitleOffset()*1.5);
   histTot_p->DrawCopy("HIST E1 P");
   comboTot_p->DrawCopy("SAME HIST E1 P");
+  gPad->SetLogy();
 
   validation_p->cd();
   pads[1]->cd();
@@ -116,6 +117,8 @@ void comboValidation(TH1* histTot_p, TH1* comboTot_p)
   div->GetYaxis()->SetTitle("Inclusive/Combo");
   //  div->GetYaxis()->SetTitleOffset(div->GetYaxis()->GetTitleOffset()*1.5);
   div->GetYaxis()->SetNdivisions(404);
+  div->SetMaximum(1.1);
+  div->SetMinimum(0.9);
   div->DrawCopy("HIST E1 P");
   delete div;
   
@@ -138,6 +141,7 @@ void comboValidation(TH1* histTot_p, TH1* comboTot_p)
   errHistTot_p->GetYaxis()->SetTitle("Error");
   errHistTot_p->DrawCopy("HIST E1 P");
   errComboTot_p->DrawCopy("HIST E1 P SAME");
+  gPad->SetLogy();
 
   validation_p->cd();
   pads[3]->cd();
@@ -172,7 +176,7 @@ void comboValidation(TH1* histTot_p, TH1* comboTot_p)
   return;
 }
 
-void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector<TH1D*> inTH1_p, RooUnfoldResponse* rooRes, RooUnfoldBayes* rooUnfBayes, RooUnfoldSvd* rooUnfSvd, const bool isBayes, const unsigned int iterPos, const std::string ppPbPbStr)
+void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector<TH1D*> inTH1_p, RooUnfoldResponse* rooRes, TH2* rooResSymm, RooUnfoldBayes* rooUnfBayes, RooUnfoldSvd* rooUnfSvd, TH1D* dVect_p, TH1D* svVect_p, const bool isBayes, const unsigned int iterPos, const std::string ppPbPbStr)
 {
   const Int_t nTotHist = 7;
 
@@ -186,6 +190,10 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
   label_p.SetTextFont(43);
   label_p.SetTextSize(14);
   label_p.SetNDC();
+
+  TLatex label2_p;
+  label2_p.SetTextFont(43);
+  label2_p.SetTextSize(9);
 
   TDatime date;
   kirchnerPalette col;
@@ -279,11 +287,13 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
     pads[5]->cd();    
     tempDiv_p = (TH1D*)inTH1_p.at(4)->Clone(("tempDiv_" + uniqueStr + "_p").c_str());
     tempDiv_p->Divide(inTH1_p.at(5));
-    tempDiv_p->SetMaximum(1.2);
-    tempDiv_p->SetMinimum(0.8);
+    tempDiv_p->SetMaximum(1.05);
+    tempDiv_p->SetMinimum(0.95);
     tempDiv_p->DrawCopy("HIST E1 P");    
     delete tempDiv_p;
   }
+
+  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   validation_p->cd();
   pads[6]->cd();
@@ -313,15 +323,135 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
   pads[8]->cd();
   pads[8]->SetTopMargin(pads[8]->GetBottomMargin());
 
-  if(!isBayes && rooUnfSvd != NULL){
-    std::string dVectName = rooUnfSvd->GetName();
-    dVectName = dVectName + "_D_TEMP";
-    TH1D* dVect_p = (TH1D*)rooUnfSvd->Impl()->GetD()->Clone(dVectName.c_str());
-    dVect_p->DrawCopy("HIST E1 P");
-    label_p.DrawLatex(.3, .93, "D-Vector");
+  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
-    delete dVect_p;
+  if(!isBayes){
+    if(dVect_p != NULL){
+      if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+      
+      dVect_p->SetTitle("");
+      dVect_p->GetXaxis()->SetTitleFont(43);
+      dVect_p->GetXaxis()->SetTitleSize(20);
+      dVect_p->GetXaxis()->SetLabelFont(43);
+      dVect_p->GetXaxis()->SetLabelSize(20);
+
+      dVect_p->GetYaxis()->SetTitleFont(43);
+      dVect_p->GetYaxis()->SetTitleSize(20);
+      dVect_p->GetYaxis()->SetLabelFont(43);
+      dVect_p->GetYaxis()->SetLabelSize(20);
+
+      dVect_p->SetMarkerSize(0.8);
+      dVect_p->SetMarkerStyle(20);
+      dVect_p->SetMarkerColor(1);
+      dVect_p->SetLineColor(1);
+
+      dVect_p->DrawCopy("HIST E1 P");
+      gPad->SetLogy();
+      label2_p.SetTextAngle(90);
+
+      Double_t inTempMin = dVect_p->GetMaximum();
+      for(Int_t bIX = 0; bIX < dVect_p->GetNbinsX(); ++bIX){
+	if(dVect_p->GetBinContent(bIX+1) < inTempMin && dVect_p->GetBinContent(bIX+1) > 0) inTempMin = dVect_p->GetBinContent(bIX+1);
+      }
+
+      inTempMin /= 10;
+      dVect_p->SetMinimum(inTempMin);
+      dVect_p->SetMaximum(dVect_p->GetMaximum()*10.);
+
+      const Int_t nTempLog = 20;
+      Double_t tempLog[nTempLog+1];
+      getLogBins(dVect_p->GetMinimum(), dVect_p->GetMaximum(), nTempLog, tempLog);
+      std::cout << "LOG BINS " << dVect_p->GetMinimum() << ", " << dVect_p->GetMaximum() << ", " << nTempLog << ", " << tempLog[0] << ", " << tempLog[nTempLog] << std::endl;
+
+      for(Int_t bIX = 0; bIX < dVect_p->GetNbinsX(); ++bIX){
+	Double_t yVal = dVect_p->GetBinContent(bIX+1);
+	if(yVal > tempLog[10]) yVal = tempLog[6];
+	else yVal = tempLog[13];
+	label2_p.DrawLatex(dVect_p->GetBinCenter(bIX+1), yVal, prettyString(dVect_p->GetBinContent(bIX+1), 2, false).c_str());
+      }
+      label2_p.SetTextAngle(0);
+
+      label_p.DrawLatex(.3, .93, "D-Vector");
+    }
+    if(svVect_p != NULL){
+      pads[12]->cd();
+
+      svVect_p->SetTitle("");
+
+      svVect_p->GetXaxis()->SetTitleFont(43);
+      svVect_p->GetXaxis()->SetTitleSize(20);
+      svVect_p->GetXaxis()->SetLabelFont(43);
+      svVect_p->GetXaxis()->SetLabelSize(20);
+
+      svVect_p->GetYaxis()->SetTitleFont(43);
+      svVect_p->GetYaxis()->SetTitleSize(20);
+      svVect_p->GetYaxis()->SetLabelFont(43);
+      svVect_p->GetYaxis()->SetLabelSize(20);
+
+      svVect_p->SetMarkerSize(0.8);
+      svVect_p->SetMarkerStyle(20);
+      svVect_p->SetMarkerColor(1);
+      svVect_p->SetLineColor(1);
+      
+      svVect_p->DrawCopy("HIST E1 P");
+      gPad->SetLogy();
+      label2_p.SetTextAngle(90);
+      
+      Double_t inTempMin = svVect_p->GetMaximum();
+      for(Int_t bIX = 0; bIX < svVect_p->GetNbinsX(); ++bIX){
+	if(svVect_p->GetBinContent(bIX+1) < inTempMin && svVect_p->GetBinContent(bIX+1) > 0) inTempMin = svVect_p->GetBinContent(bIX+1);
+      }
+
+      inTempMin /= 10;
+      svVect_p->SetMinimum(inTempMin);
+      svVect_p->SetMaximum(svVect_p->GetMaximum()*10.);
+
+
+      const Int_t nTempLog = 20;
+      Double_t tempLog[nTempLog+1];
+      getLogBins(svVect_p->GetMinimum(), svVect_p->GetMaximum(), nTempLog, tempLog);
+
+      for(Int_t bIX = 0; bIX < svVect_p->GetNbinsX(); ++bIX){
+	Double_t yVal = svVect_p->GetBinContent(bIX+1);
+	if(yVal > tempLog[10]) yVal = tempLog[6];
+	else yVal = tempLog[13];
+	
+	label2_p.DrawLatex(svVect_p->GetBinCenter(bIX+1), yVal, prettyString(svVect_p->GetBinContent(bIX+1), 2, false).c_str());
+      }
+      label2_p.SetTextAngle(0);
+      label_p.DrawLatex(.3, .93, "Singular Values");
+    }
   }
+  if(isBayes && rooResSymm != NULL){
+    for(Int_t bIY = 0; bIY < rooResSymm->GetNbinsY(); ++bIY){
+      Double_t total = 0.0;
+      for(Int_t bIX = 0; bIX < rooResSymm->GetNbinsX(); ++bIX){
+	total += rooResSymm->GetBinContent(bIX+1, bIY+1);
+      }
+
+      for(Int_t bIX = 0; bIX < rooResSymm->GetNbinsX(); ++bIX){
+	rooResSymm->SetBinContent(bIX+1, bIY+1, rooResSymm->GetBinContent(bIX+1, bIY+1)/total);
+      }
+    }
+    
+    rooResSymm->DrawCopy("COLZ");
+    gPad->SetLogz();
+    label_p.DrawLatex(.3, .93, "Symmetric Response (#bf{#color[2]{Red>=1%}})");
+  }
+
+  for(Int_t bIX = 0; bIX < rooResSymm->GetNbinsX(); ++bIX){
+    Double_t xVal = (2.*rooResSymm->GetXaxis()->GetBinLowEdge(bIX+1) + rooResSymm->GetXaxis()->GetBinCenter(bIX+1))/3.;
+
+    for(Int_t bIY = 0; bIY < rooResSymm->GetNbinsY(); ++bIY){
+      Double_t yVal = rooResSymm->GetYaxis()->GetBinCenter(bIY+1);
+      Double_t val = rooResSymm->GetBinContent(bIX+1, bIY+1);
+
+      if(val < .01) label2_p.DrawLatex(xVal, yVal, prettyString(val, 3, false).c_str());
+      else label2_p.DrawLatex(xVal, yVal, ("#bf{#color[2]{" + prettyString(val, 3, false) + "}}").c_str());
+    }
+  }
+
+  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   validation_p->cd();
   pads[9]->cd();
@@ -347,9 +477,23 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
   if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   res->SetMarkerSize(1.25);
-  gStyle->SetPaintTextFormat("1.3f");
-  res->DrawCopy("COLZ TEXT");
-  label_p.DrawLatex(.3, .93, "Response");
+  //  gStyle->SetPaintTextFormat("1.3f");
+  res->DrawCopy("COLZ");
+  label_p.DrawLatex(.3, .93, "Response (#bf{#color[2]{Red>=1%}})");
+  for(Int_t bIX = 0; bIX < res->GetNbinsX(); ++bIX){
+
+    Double_t xVal = (2.*res->GetXaxis()->GetBinLowEdge(bIX+1) + res->GetXaxis()->GetBinCenter(bIX+1))/3.;
+
+    for(Int_t bIY = 0; bIY < res->GetNbinsY(); ++bIY){
+      Double_t yVal = res->GetYaxis()->GetBinCenter(bIY+1);
+      Double_t val = res->GetBinContent(bIX+1, bIY+1);
+
+      if(val < .01) label2_p.DrawLatex(xVal, yVal, prettyString(val, 3, false).c_str());
+      else label2_p.DrawLatex(xVal, yVal, ("#bf{#color[2]{" + prettyString(val, 3, false) + "}}").c_str());
+    }
+  }
+
+  if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   pads[9]->SetLogz();
   delete res;
@@ -358,6 +502,7 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
   pads[10]->cd();
   pads[10]->SetTopMargin(pads[10]->GetBottomMargin());
 
+  /*
   if(!isBayes && rooUnfSvd != NULL){
     std::string sVectName = rooUnfSvd->GetName();
     sVectName = sVectName + "_SV_TEMP";
@@ -369,6 +514,7 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
 
     delete sVect_p;
   }
+  */
 
   validation_p->cd();
   pads[11]->cd();
@@ -407,16 +553,14 @@ void plotValidation(TCanvas* validation_p, TPad* pads[nPadTotValid], std::vector
       }
     }
   
+    if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
+
     TH2D* cov = new TH2D(*tempCovPears);
     if(doGlobalDebug) std::cout << "PRINT cov" << std::endl;
     if(doGlobalDebug) cov->Print("ALL");
     cov->DrawCopy("COLZ");
 
-    label_p.DrawLatex(.3, .93, "Pearson (#bf{#color[2]{Red>=10%}}");
-
-    TLatex label2_p;
-    label2_p.SetTextFont(43);
-    label2_p.SetTextSize(9);
+    label_p.DrawLatex(.3, .93, "Pearson (#bf{#color[2]{Red>=10%}})");
   
     for(Int_t bIX = 0; bIX < cov->GetNbinsX(); ++bIX){
       for(Int_t bIY = 0; bIY < cov->GetNbinsY(); ++bIY){
@@ -799,7 +943,7 @@ int makePlotValidation_FromTree(std::string inFileName)
   const Int_t nSystForFill = std::stoi(std::string(inFile_p->Get("nSystForFill")->GetTitle()));
   const Int_t nSystForCopy = std::stoi(std::string(inFile_p->Get("nSystForCopy")->GetTitle()));
   const Int_t nBayesIter = std::stoi(std::string(inFile_p->Get("nBayesIter")->GetTitle())); 
-  const Bool_t doSvd = false;//std::stoi(std::string(inFile_p->Get("doSvd")->GetTitle())); 
+  const Bool_t doSvd = std::stoi(std::string(inFile_p->Get("doSvd")->GetTitle())); 
   const Int_t nSvd = std::stoi(std::string(inFile_p->Get("nSvd")->GetTitle())); 
  
   std::string centBinsLowStr = std::string(inFile_p->Get("centBinsLow")->GetTitle());
@@ -883,8 +1027,6 @@ int makePlotValidation_FromTree(std::string inFileName)
     if(truthNBins[cI] > maxTruthBins) maxTruthBins = truthNBins[cI];
   }
 
-  std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-
   TCanvas* canvPbPbData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSyst][nBayesIter];
   TCanvas* canvPbPbData_FULLSvd_h[nCentBins][nAbsEtaBins+1][nSyst][nSvd];
   TPad* padsPbPbData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSyst][nBayesIter][nPadTotValid];
@@ -895,8 +1037,6 @@ int makePlotValidation_FromTree(std::string inFileName)
   TPad* padsPPData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSyst][nBayesIter][nPadTotValid];
   TPad* padsPPData_FULLSvd_h[nCentBins][nAbsEtaBins+1][nSyst][nSvd][nPadTotValid];
   
-  std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-
   const Int_t nRow = 2;
   const Int_t nColumn = 4;
 
@@ -931,6 +1071,9 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
 	    canvPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->cd();	      
+
+	    if(pI == 12) continue;
+
 	    padsPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPbPbData_" + binStrPbPb + "_FULLBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
 
 	    if(pI != 12) padsPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI]->Draw("SAME");
@@ -940,17 +1083,20 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  }
 	}
 	
-	for(Int_t bI = 0; bI < nSvd; ++bI){
+	for(Int_t bI = 1; bI < nSvd; ++bI){
 	  if(bI+1 > truthNBins[cI]) break;
 	  canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = new TCanvas(("canvPbPbData_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str(), "", nColumn*400, nRow*250);
 	  
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
 	    canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->cd();
-	    padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPbPbData_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
+
+	    if(pI == 8) padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPbPbData_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], .25, xHiTot[pI], .5);
+	    else padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPbPbData_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
+
 	    padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->Draw("SAME");
 	    padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetTopMargin(0.01);
-	    if(pI < 8) padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetRightMargin(0.01);
-	    if(pI < 8 && pI%2 == 0) padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetBottomMargin(0.01);
+	    if(pI < 9 || pI == 12) padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetRightMargin(0.01);
+	    if(pI < 9 && pI%2 == 0) padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetBottomMargin(0.01);
 	  }
 	}
       }
@@ -962,6 +1108,8 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI] = new TCanvas(("canvPPData_" + binStrPP + "_FULLBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str(), "", nColumn*400, nRow*250);
 	  
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
+	    if(pI == 12) continue;
+
 	    canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->cd();
 	    padsPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPPData_" + binStrPP + "_FULLBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
 	    padsPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI]->Draw("SAME");
@@ -971,25 +1119,26 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  }
 	}
 	
-	for(Int_t bI = 0; bI < nSvd; ++bI){
+	for(Int_t bI = 1; bI < nSvd; ++bI){
 	  if(bI+1 > truthNBins[cI]) break;
 	  
 	  canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = new TCanvas(("canvPPData_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str(), "", nColumn*400, nRow*250);
 	  
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
 	    canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->cd();
-	    padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPPData_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
+
+	    if(pI == 8) padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPPData_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], .25, xHiTot[pI], .5);
+	    else padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI] = new TPad(("padsPPData_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_" + std::to_string(pI) + "_h").c_str(), "", xLowTot[pI], yLowTot[pI], xHiTot[pI], yHiTot[pI]);
+
 	    padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->Draw("SAME");
 	    padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetTopMargin(0.01);
-	    if(pI < 8) padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetRightMargin(0.01);
-	    if(pI < 8 && pI%2 == 0) padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetBottomMargin(0.01);
+	    if(pI < 9 || pI == 12) padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetRightMargin(0.01);
+	    if(pI < 9 && pI%2 == 0) padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->SetBottomMargin(0.01);
 	  }
 	}
       }
     }
   }
-
-  std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 
   TH1D* jtptPbPbData_RAW_h[nCentBins][nAbsEtaBins+1][nSystForFill];
   TH1D* jtptPbPbData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSystForFill][nBayesIter];
@@ -997,6 +1146,8 @@ int makePlotValidation_FromTree(std::string inFileName)
   TH1D* jtetaPbPbData_FULLBayes_h[nCentBins][nSystForFill][nBayesIter];
   RooUnfoldBayes* rooUnfoldBayesPbPbData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSystForFill][nBayesIter];
   RooUnfoldSvd* rooUnfoldSvdPbPbData_FULLSvd_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
+  TH1D* rooUnfoldSvdPbPbData_FULLSvd_DV_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
+  TH1D* rooUnfoldSvdPbPbData_FULLSvd_SV_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
 
   TH1D* jtptPPData_RAW_h[nCentBins][nAbsEtaBins+1][nSystForFill];
   TH1D* jtptPPData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSystForFill][nBayesIter];
@@ -1004,6 +1155,8 @@ int makePlotValidation_FromTree(std::string inFileName)
   TH1D* jtetaPPData_FULLBayes_h[nCentBins][nSystForFill][nBayesIter];
   RooUnfoldBayes* rooUnfoldBayesPPData_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSystForFill][nBayesIter];
   RooUnfoldSvd* rooUnfoldSvdPPData_FULLSvd_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
+  TH1D* rooUnfoldSvdPPData_FULLSvd_DV_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
+  TH1D* rooUnfoldSvdPPData_FULLSvd_SV_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
 
   TH1D* jtptPbPbMC_RAW_h[nCentBins][nAbsEtaBins+1][nSystForFill];
   TH1D* jtptPbPbMC_FULLBayes_h[nCentBins][nAbsEtaBins+1][nSystForFill][nBayesIter];
@@ -1016,6 +1169,7 @@ int makePlotValidation_FromTree(std::string inFileName)
   TH1D* jtptPbPbMC_FULLSvd_Frac_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
   TH1D* refptPbPbMC_Frac_h[nCentBins][nAbsEtaBins+1];
   TH2D* responsePbPbMC_h[nCentBins][nAbsEtaBins+1];
+  TH2D* responsePbPbMC_Symm_h[nCentBins][nAbsEtaBins+1];
   RooUnfoldResponse* rooResponsePbPbMC_h[nCentBins][nAbsEtaBins+1];
   TH1D* jtetaPbPbMC_FULLBayes_h[nCentBins][nSystForFill][nBayesIter];
   TH1D* jtetaPbPbMC_FULLBayes_Frac_h[nCentBins][nSystForFill][nBayesIter];
@@ -1031,6 +1185,7 @@ int makePlotValidation_FromTree(std::string inFileName)
   TH1D* jtptPPMC_FULLSvd_Frac_h[nCentBins][nAbsEtaBins+1][nSystForFill][nSvd];
   TH1D* refptPPMC_Frac_h[nCentBins][nAbsEtaBins+1];
   TH2D* responsePPMC_h[nCentBins][nAbsEtaBins+1];
+  TH2D* responsePPMC_Symm_h[nCentBins][nAbsEtaBins+1];
   RooUnfoldResponse* rooResponsePPMC_h[nCentBins][nAbsEtaBins+1];
   TH1D* jtetaPPMC_FULLBayes_h[nCentBins][nSystForFill][nBayesIter];
   TH1D* jtetaPPMC_FULLBayes_Frac_h[nCentBins][nSystForFill][nBayesIter];
@@ -1056,18 +1211,22 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  jtptPbPbMC_FULLBayes_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/jtptPbPbMC_" + binStrPbPb + "_FULLBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	  jtptPbPbMC_FULLBayes_Frac_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/jtptPbPbMC_" + binStrPbPb + "_FULLBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_Frac_h").c_str());
 	  
-	  rooUnfoldBayesPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI] = (RooUnfoldBayes*)inFile_p->Get((algoStrPbPb + "/" + centStr +"/rooUnfoldBayesPbPbData_" + binStrPbPb + "_FullBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
-	  
+	  rooUnfoldBayesPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI] = (RooUnfoldBayes*)inFile_p->Get((algoStrPbPb + "/" + centStr +"/rooUnfoldBayesPbPbData_" + binStrPbPb + "_FullBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());	  
 	}
 	
 	if(doGlobalDebug) std::cout << __FILE__ << ", " << __LINE__ << std::endl;
 	
-	for(Int_t bI = 0; bI < nSvd; ++bI){
+	for(Int_t bI = 1; bI < nSvd; ++bI){
 	  if(bI+1 > truthNBins[cI]) break;
 	  
 	  jtptPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/jtptPbPbData_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	  jtptPbPbMC_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/jtptPbPbMC_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	  jtptPbPbMC_FULLSvd_Frac_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/jtptPbPbMC_" + binStrPbPb + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_Frac_h").c_str());
+
+	  std::cout << algoStrPbPb + "/" + centStr +"/rooUnfoldSvdPbPbData_" + binStrPbPb + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h" << std::endl;
+	  rooUnfoldSvdPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (RooUnfoldSvd*)inFile_p->Get((algoStrPbPb + "/" + centStr +"/rooUnfoldSvdPbPbData_" + binStrPbPb + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
+	  rooUnfoldSvdPbPbData_FULLSvd_DV_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr +"/rooUnfoldSvdPbPbData_" + binStrPbPb + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h_DV").c_str());
+	  rooUnfoldSvdPbPbData_FULLSvd_SV_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr +"/rooUnfoldSvdPbPbData_" + binStrPbPb + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h_SV").c_str());
 	}
       }
       
@@ -1075,6 +1234,7 @@ int makePlotValidation_FromTree(std::string inFileName)
       refptPbPbMC_Frac_h[cI][aI] = (TH1D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/refptPbPbMC_" + binStrPbPb + "_Frac_h").c_str());
       
       responsePbPbMC_h[cI][aI] = (TH2D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/responsePbPbMC_" + binStrPbPb + "_h").c_str());
+      responsePbPbMC_Symm_h[cI][aI] = (TH2D*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/responsePbPbMC_" + binStrPbPb + "_Symm_h").c_str());
       rooResponsePbPbMC_h[cI][aI] = (RooUnfoldResponse*)inFile_p->Get((algoStrPbPb + "/" + centStr + "/rooResponsePbPbMC_" + binStrPbPb + "_h").c_str());
     }
     
@@ -1111,18 +1271,23 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  rooUnfoldBayesPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI] = (RooUnfoldBayes*)inFile_p->Get((algoStrPP + "/" + centStr +"/rooUnfoldBayesPPData_" + binStrPP + "_FullBayes" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	}
 	
-	for(Int_t bI = 0; bI < nSvd; ++bI){
+	for(Int_t bI = 1; bI < nSvd; ++bI){
 	  if(bI+1 > truthNBins[cI]) break;
 	  
 	  jtptPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr + "/jtptPPData_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	  jtptPPMC_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr + "/jtptPPMC_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
 	  jtptPPMC_FULLSvd_Frac_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr + "/jtptPPMC_" + binStrPP + "_FULLSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_Frac_h").c_str());
+
+          rooUnfoldSvdPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI] = (RooUnfoldSvd*)inFile_p->Get((algoStrPP + "/" + centStr +"/rooUnfoldSvdPPData_"+ binStrPP + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h").c_str());
+          rooUnfoldSvdPPData_FULLSvd_DV_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr +"/rooUnfoldSvdPPData_"+ binStrPP + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h_DV").c_str());
+          rooUnfoldSvdPPData_FULLSvd_SV_h[cI][aI][systPosForFill[sI]][bI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr +"/rooUnfoldSvdPPData_"+ binStrPP + "_FullSvd" + std::to_string(bI+1) + "_" + systStr[systPosForFill[sI]] + "_h_SV").c_str());
 	}
       }
       
       refptPPMC_h[cI][aI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr + "/refptPPMC_" + binStrPP + "_h").c_str());
       refptPPMC_Frac_h[cI][aI] = (TH1D*)inFile_p->Get((algoStrPP + "/" + centStr + "/refptPPMC_" + binStrPP + "_Frac_h").c_str());
       responsePPMC_h[cI][aI] = (TH2D*)inFile_p->Get((algoStrPP + "/" + centStr + "/responsePPMC_" + binStrPP + "_h").c_str());
+      responsePPMC_Symm_h[cI][aI] = (TH2D*)inFile_p->Get((algoStrPP + "/" + centStr + "/responsePPMC_" + binStrPP + "_Symm_h").c_str());
       rooResponsePPMC_h[cI][aI] = (RooUnfoldResponse*)inFile_p->Get((algoStrPP + "/" + centStr + "/rooResponsePPMC_" + binStrPP + "_h").c_str());	
     }
     
@@ -1137,7 +1302,6 @@ int makePlotValidation_FromTree(std::string inFileName)
     }
   }
     
-  std::cout << __FILE__ << ", " << __LINE__ << std::endl;
   /*  
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
@@ -1158,7 +1322,7 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  doHistCopy(jtptPPMC_FULLBayes_Frac_h[cI][aI][0][bI], jtptPPMC_FULLBayes_Frac_h[cI][aI][systPosForCopy[sI]][bI]);
 	}
 	if(doSvd){
-	  for(Int_t bI = 0; bI < nSvd; ++bI){
+	  for(Int_t bI = 1; bI < nSvd; ++bI){
 	    doHistCopy(jtptPbPbData_FULLSvd_h[cI][aI][0][bI], jtptPbPbData_FULLSvd_h[cI][aI][systPosForCopy[sI]][bI]);
 	    doHistCopy(jtptPPData_FULLSvd_h[cI][aI][0][bI], jtptPPData_FULLSvd_h[cI][aI][systPosForCopy[sI]][bI]);
 	    doHistCopy(jtptPbPbMC_FULLSvd_h[cI][aI][0][bI], jtptPbPbMC_FULLSvd_h[cI][aI][systPosForCopy[sI]][bI]);
@@ -1172,13 +1336,13 @@ int makePlotValidation_FromTree(std::string inFileName)
   }
   */
 
-  std::cout << __FILE__ << ", " << __LINE__ << std::endl;
-
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     std::cout << "Validating R=" << rVals << ", Cent=" << centBinsLow[cI] << "-" << centBinsHi[cI] << std::endl;
     
     for(Int_t aI = 0; aI < nAbsEtaBins; ++aI){
       for(Int_t sI = 0; sI < nSystForFill; ++sI){
+
+	std::cout << "START BAYES PROCESSING" << std::endl;
 	for(Int_t bI = 0; bI < nBayesIter; ++bI){
 	  
 	  TH1D* prevHist_p = NULL;
@@ -1186,19 +1350,60 @@ int makePlotValidation_FromTree(std::string inFileName)
 
 	  RooUnfoldBayes* tempBayes = NULL;
 	  if(aI < nAbsEtaBins) tempBayes = rooUnfoldBayesPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI];
-
-	  plotValidation(canvPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], padsPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], {jtptPbPbMC_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_h[cI][aI], jtptPbPbMC_FULLBayes_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_Frac_h[cI][aI], jtptPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPbPbData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePbPbMC_h[cI][aI], tempBayes, NULL, true, bI, "PbPb");
+	  plotValidation(canvPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], padsPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], {jtptPbPbMC_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_h[cI][aI], jtptPbPbMC_FULLBayes_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_Frac_h[cI][aI], jtptPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPbPbData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePbPbMC_h[cI][aI], responsePbPbMC_Symm_h[cI][aI], tempBayes, NULL, NULL, NULL, true, bI, "PbPb");
 
 	  prevHist_p = NULL;
 	  if(bI != 0) prevHist_p = jtptPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI-1];
-	  plotValidation(canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], padsPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], {jtptPPMC_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_h[cI][aI], jtptPPMC_FULLBayes_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_Frac_h[cI][aI], jtptPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPPData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePPMC_h[cI][aI], tempBayes, NULL, true, bI, "PP");
+	  tempBayes = NULL;
+	  if(aI < nAbsEtaBins) tempBayes = rooUnfoldBayesPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI];
+
+	  plotValidation(canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], padsPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], {jtptPPMC_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_h[cI][aI], jtptPPMC_FULLBayes_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_Frac_h[cI][aI], jtptPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPPData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePPMC_h[cI][aI], responsePPMC_Symm_h[cI][aI], tempBayes, NULL, NULL, NULL, true, bI, "PP");	  
 	}
+
+
+	if(doSvd){
+	  std::cout << "START SVD PROCESSING" << std::endl;
+	  for(Int_t bI = 1; bI < nSvd; ++bI){
+	    if(bI+1 > truthNBins[cI]) break;
+
+	    //	    std::cout << cI << ", " << aI << ", " << sI << ", " << bI << std::endl;
+
+	    TH1D* prevHist_p = NULL;
+	    if(bI != 1) prevHist_p = jtptPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI-1];
+	    
+	    RooUnfoldSvd* tempSvd = NULL;
+	    TH1D* tempDV = NULL;
+	    TH1D* tempSV = NULL;
+	    std::cout << tempSvd << std::endl;
+	    if(aI < nAbsEtaBins){
+	      tempSvd = rooUnfoldSvdPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI];
+	      tempDV = rooUnfoldSvdPbPbData_FULLSvd_DV_h[cI][aI][systPosForFill[sI]][bI];
+	      tempSV = rooUnfoldSvdPbPbData_FULLSvd_SV_h[cI][aI][systPosForFill[sI]][bI];
+	    }
+ 
+	    plotValidation(canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], {jtptPbPbMC_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_h[cI][aI], jtptPbPbMC_FULLSvd_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPbPbMC_Frac_h[cI][aI], jtptPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPbPbData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePbPbMC_h[cI][aI], responsePbPbMC_Symm_h[cI][aI], NULL, tempSvd, tempDV, tempSV, false, bI, "PbPb");
+	    
+	    prevHist_p = NULL;
+	    if(bI != 1) prevHist_p = jtptPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI-1];
+	    tempSvd = NULL;
+	    tempDV = NULL;
+	    tempSV = NULL;
+	    if(aI < nAbsEtaBins){
+	      tempSvd = rooUnfoldSvdPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI];
+	      tempDV = rooUnfoldSvdPPData_FULLSvd_DV_h[cI][aI][systPosForFill[sI]][bI];
+	      tempSV = rooUnfoldSvdPPData_FULLSvd_SV_h[cI][aI][systPosForFill[sI]][bI];
+	    }
+
+	    plotValidation(canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], {jtptPPMC_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_h[cI][aI], jtptPPMC_FULLSvd_Frac_h[cI][aI][systPosForFill[sI]][bI], refptPPMC_Frac_h[cI][aI], jtptPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI], prevHist_p, jtptPPData_RAW_h[cI][aI][systPosForFill[sI]]}, rooResponsePPMC_h[cI][aI], responsePPMC_Symm_h[cI][aI], NULL, tempSvd, tempDV, tempSV, false, bI, "PP");	  
+	  }
+	}
+
       }
     }
   }
 
   
-
+  
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     comboValidation(refptPbPbMC_h[cI][nAbsEtaBins-1], refptPbPbMC_h[cI][nAbsEtaBins]);
     comboValidation(refptPbPbMC_Frac_h[cI][nAbsEtaBins-1], refptPbPbMC_Frac_h[cI][nAbsEtaBins]);
@@ -1218,16 +1423,22 @@ int makePlotValidation_FromTree(std::string inFileName)
       comboValidation(jtptPPMC_FULLBayes_Frac_h[cI][nAbsEtaBins-1][0][bI], jtptPPMC_FULLBayes_Frac_h[cI][nAbsEtaBins][0][bI]);      
     }    
   }
-     
+  
+  
+  std::cout << "START SAVE LOOP" << std::endl;
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     for(Int_t aI = 0; aI < nAbsEtaBins+1; ++aI){
+      if(aI == nAbsEtaBins) continue;
+
       for(Int_t sI = 0; sI < nSystForFill; ++sI){
 	for(Int_t bI = 0; bI < nBayesIter; ++bI){
 	  std::string saveName = canvPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->GetName();
 	  saveName = dirName2 + saveName + std::to_string(date->GetDate()) + ".pdf";
 	  
+	  std::cout << saveName << std::endl;
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
+	    if(pI == 12) continue;
 	    canvPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->cd();
 	    padsPbPbData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI]->cd();
 	    
@@ -1240,12 +1451,43 @@ int makePlotValidation_FromTree(std::string inFileName)
 	  saveName = dirName2 + saveName + std::to_string(date->GetDate()) + ".pdf";
 	  
 	  for(Int_t pI = 0; pI < nPadTotValid; ++pI){
+	    if(pI == 12) continue;
+
 	    canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->cd();
 	    padsPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI][pI]->cd();
 	    
 	    gStyle->SetOptStat(0);
 	  }
 	  canvPPData_FULLBayes_h[cI][aI][systPosForFill[sI]][bI]->SaveAs(saveName.c_str());
+	}
+
+	if(doSvd){
+	  for(Int_t bI = 1; bI < nSvd; ++bI){
+	    if(bI+1 > truthNBins[cI]) break;
+
+	    std::string saveName = canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->GetName();
+	    saveName = dirName2 + saveName + std::to_string(date->GetDate()) + ".pdf";
+	    
+	    for(Int_t pI = 0; pI < nPadTotValid; ++pI){
+	      canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->cd();
+	      padsPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->cd();
+	      
+	      gStyle->SetOptStat(0);
+	    }
+	    
+	    canvPbPbData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->SaveAs(saveName.c_str());
+	    
+	    saveName = canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->GetName();
+	    saveName = dirName2 + saveName + std::to_string(date->GetDate()) + ".pdf";
+	    
+	    for(Int_t pI = 0; pI < nPadTotValid; ++pI){
+	      canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->cd();
+	      padsPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI][pI]->cd();
+	      
+	      gStyle->SetOptStat(0);
+	    }
+	    canvPPData_FULLSvd_h[cI][aI][systPosForFill[sI]][bI]->SaveAs(saveName.c_str());
+	  }
 	}
       }       
     }
@@ -1270,7 +1512,6 @@ int main(int argc, char* argv[])
     std::cout << "Usage: ./makePlotValidation_FromTree.exe <inFileName>" << std::endl;
     return 1;
   }
-
 
   int retVal = 0;
   retVal += makePlotValidation_FromTree(argv[1]);
