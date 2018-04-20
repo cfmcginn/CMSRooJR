@@ -26,7 +26,7 @@ mkdirOutput:
 	$(MKDIR_OUTPUT)
 
 mkdirPdf:
-$(MKDIR_PDF)
+	$(MKDIR_PDF)
 
 buildAndTest: src/buildAndTest.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -o bin/buildAndTest.exe src/buildAndTest.C
@@ -65,4 +65,4 @@ clean:
 	rm -f include/#*#
 	rm -f configs/#*#
 	rm -f bin/*.exe
-rm -rf bin
+	rm -rf bin
