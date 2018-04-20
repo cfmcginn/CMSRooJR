@@ -17,7 +17,7 @@ MKDIR_PDF = mkdir -p $(PWD)/pdfDir
 
 #all: mkdirBin mkdirPdf mkdirOutput makeFullRAAHist_FromTree valgrindTest makeFirstRAAHist_FromTree makeFinalRAAHist_FromTree
 
-all: mkdirBin mkdirPdf mkdirOutput bin/makeFirstRAAHist_FromTree.exe bin/makeFinalRAAHist_FromTree.exe bin/makePlotValidation_FromTree.exe bin/v2AndV3.exe
+all: mkdirBin mkdirPdf mkdirOutput bin/v2AndV3.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
