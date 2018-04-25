@@ -129,9 +129,9 @@ int TexSlides(std::vector<std::vector<std::string>*>* hvv, std::string outTexFil
 	      i++;
 	      continue;
 	    }
-	    std::string name=hists_list->at(i);
-	    while(name.find("_")!=std::string::npos) name.replace(name.find("_"),1," ");
-	    fileTex << name.substr(7) <<"\\\\"<<std::endl;
+	    //std::string name=hists_list->at(i);
+	    //while(name.find("_")!=std::string::npos) name.replace(name.find("_"),1," ");
+	    //fileTex << name.substr(7) <<"\\\\"<<std::endl;
 	    fileTex << "\\includegraphics[width="<<std::to_string((float)0.8/nPlots-((nPlots==1)?0.1:0))<<"\\textwidth]{" << hists_list->at(i) << "}" << std::endl;
 	    i++;
 	  }

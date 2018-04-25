@@ -65,4 +65,4 @@ clean:
 	rm -f include/#*#
 	rm -f configs/#*#
 	rm -f bin/*.exe
-	rm -rf  bin
+	rm -rf bin
