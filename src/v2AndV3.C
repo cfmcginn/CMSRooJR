@@ -20,12 +20,17 @@
 #include "include/inToOutFileString.h"
 #include "include/histDefUtility.h"
 #include "include/kirchnerPalette.h"
+#include "include/goodGlobalSelection.h"
 
 #include "CustomCanvas.h"
 #include "TexSlides.C"
 
+
 int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
 {
+  TDatime* date = new TDatime();
+  const std::string dateStr = std::to_string(date->GetDate());
+
   kirchnerPalette col;
   //points digitized from CMS-HIN-16-019, Fig.2 here
   //http://cms-results.web.cern.ch/cms-results/public-results/publications/HIN-16-019/index.html
@@ -83,27 +88,36 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
   std::string mcStr = "_DATA";
   if(isMC) mcStr = "_MC";
   const std::string outFileName = "output/" + inToOutFileString(inFileName, "V2AndV3" + mcStr);
+
   TFile* outFile_p = new TFile(outFileName.c_str(), "RECREATE");
+
+  const Int_t nFlowTypes = 6;
+  const std::string flowTypes[nFlowTypes] = {"", "HFPlane", "FreePlane", "JettyExclude", "JettyExcludeHFPlane", "JettyExcludeFreePlane"};
+  const std::string flowTypes2[nFlowTypes] = {"Default", "HFPlane", "FreePlane", "JettyExcludeDefault", "JettyExcludeHFPlane", "JettyExcludeFreePlane"};
 
   const Int_t nCentBins = 11;
   const Int_t centBinsLow[nCentBins] = {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55};
   const Int_t centBinsHi[nCentBins] = {10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60};
   const Float_t centBins[nCentBins+1] = {5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60};
 
-  TH1F* v2_h[nCentBins];
-  TH1F* v3_h[nCentBins];
+  TH1F* v2_h[nCentBins][nFlowTypes];
+  TH1F* v3_h[nCentBins][nFlowTypes];
 
-  for(Int_t cI = 0; cI < nCentBins; ++cI){
-    std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
-    std::string centStr2 = std::to_string(centBinsLow[cI]) + "-" + std::to_string(centBinsHi[cI]) + "%";
+  for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+    for(Int_t cI = 0; cI < nCentBins; ++cI){
+      const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
+      const std::string centStr2 = std::to_string(centBinsLow[cI]) + "-" + std::to_string(centBinsHi[cI]) + "%";
+      
+      const std::string v2Name = "v2_" + flowTypes2[fI] + "_" + centStr + "_h";
+      const std::string v3Name = "v3_" + flowTypes2[fI] + "_" + centStr + "_h";
+      
+      //      std::cout << "Cent: " << fI << "/" << nFlowTypes << ", " << cI << "/" << nCentBins << ", " << centStr << std::endl;
 
-    std::string v2Name = "v2_" + centStr + "_h";
-    std::string v3Name = "v3_" + centStr + "_h";
-
-    v2_h[cI] = new TH1F(v2Name.c_str(), (v2Name+";v_{2};Counts (" + centStr2 + ")").c_str(), 100, 0, 1.);
-    v3_h[cI] = new TH1F(v3Name.c_str(), (v3Name+";v_{3};Counts (" + centStr2 + ")").c_str(), 100, 0, 1.);
-
-    centerTitles({v2_h[cI], v3_h[cI]});
+      v2_h[cI][fI] = new TH1F(v2Name.c_str(), (";v_{2};Counts (" + centStr2 + ")").c_str(), 150, 0, 0.6);
+      v3_h[cI][fI] = new TH1F(v3Name.c_str(), (";v_{3};Counts (" + centStr2 + ")").c_str(), 150, 0, 0.6);
+      
+      centerTitles({v2_h[cI][fI], v3_h[cI][fI]});
+    }
   }
 
   TH1F* v2_Mean_h = new TH1F("v2_Mean_h", ";Centrality (%);#LTv_{2}#GT", nCentBins, centBins);
@@ -114,34 +128,84 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
 
   centerTitles({v2_Mean_h, v2_Raw_h, v3_Mean_h, v2_HIN16019_h});
 
+  Float_t hiHF_;
+  Float_t vz_;
   Int_t hiBin_;
 
-  std::vector<double>* rhoFlowFitParams_p=NULL;
+  Int_t pprimaryVertexFilter_;
+  Int_t HBHENoiseFilterResultRun2Loose_;
+  Int_t pclusterCompatibilityFilter_;
+  Int_t phfCoincFilter3_;
 
-  const Int_t nMaxEntries = 100000;
+  goodGlobalSelection sel;
+  sel.setIsPbPb(true);
+
+  std::vector<std::vector<double>*> rhoFlowFitParams_p;
+  rhoFlowFitParams_p.reserve(nFlowTypes);
+  for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+    rhoFlowFitParams_p.push_back(NULL);
+  }
+
+  const Int_t nMaxEntries = 1000000;
   Int_t totEntries = 0;
 
   for(unsigned int fI = 0; fI < fileList.size(); ++fI){
-    TFile* inFile_p = TFile::Open(mntToXRootdFileString(fileList.at(fI)).c_str(), "READ");
-    TTree* rhoTree_p = (TTree*)inFile_p->Get("hiPuRhoR3Analyzer/t");
+    std::string tempFileName = mntToXRootdFileString(fileList.at(fI));
+    
+    std::cout << "File: " << tempFileName << std::endl;
+    TFile* inFile_p = TFile::Open(tempFileName.c_str(), "READ");
+    TTree* rhoTree_p[nFlowTypes];
+    for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+      rhoTree_p[fI] = (TTree*)inFile_p->Get(("hiFlowAnalyzer" + flowTypes[fI] + "/t").c_str());
+      rhoTree_p[fI]->SetBranchStatus("*", 0);
+      rhoTree_p[fI]->SetBranchStatus("rhoFlowFitParams", 1);
+      
+      rhoTree_p[fI]->SetBranchAddress("rhoFlowFitParams", &(rhoFlowFitParams_p.at(fI)));
+    }
+
     TTree* hiTree_p = (TTree*)inFile_p->Get("hiEvtAnalyzer/HiTree");
-
-    rhoTree_p->SetBranchStatus("*", 0);
-    rhoTree_p->SetBranchStatus("rhoFlowFitParams", 1);
-
-    rhoTree_p->SetBranchAddress("rhoFlowFitParams", &rhoFlowFitParams_p);
+    TTree* skimTree_p = (TTree*)inFile_p->Get("skimanalysis/HltTree");
 
     hiTree_p->SetBranchStatus("*", 0);
+    hiTree_p->SetBranchStatus("vz", 1);
+    hiTree_p->SetBranchStatus("hiHF", 1);
     hiTree_p->SetBranchStatus("hiBin", 1);
 
+    hiTree_p->SetBranchAddress("vz", &vz_);
+    hiTree_p->SetBranchAddress("hiHF", &hiHF_);
     hiTree_p->SetBranchAddress("hiBin", &hiBin_);
 
-    const Int_t nEntries = rhoTree_p->GetEntries();
+    skimTree_p->SetBranchStatus("*", 0);
+    skimTree_p->SetBranchStatus("pprimaryVertexFilter", 1);
+    skimTree_p->SetBranchStatus("HBHENoiseFilterResultRun2Loose", 1);
+    skimTree_p->SetBranchStatus("phfCoincFilter3", 1);
+    skimTree_p->SetBranchStatus("pclusterCompatibilityFilter", 1);
+
+    skimTree_p->SetBranchAddress("pprimaryVertexFilter", &pprimaryVertexFilter_);
+    skimTree_p->SetBranchAddress("HBHENoiseFilterResultRun2Loose", &HBHENoiseFilterResultRun2Loose_);
+    skimTree_p->SetBranchAddress("phfCoincFilter3", &phfCoincFilter3_);
+    skimTree_p->SetBranchAddress("pclusterCompatibilityFilter", &pclusterCompatibilityFilter_);
+
+    const Int_t nEntries = rhoTree_p[0]->GetEntries();
 
     for(Int_t entry = 0; entry < nEntries; ++entry){
       if(totEntries%10000 == 0) std::cout << " Entry: " << totEntries << "/" << nMaxEntries << std::endl;
-      rhoTree_p->GetEntry(entry);
+
+      for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+	rhoTree_p[fI]->GetEntry(entry);
+      }
+      
       hiTree_p->GetEntry(entry);
+      skimTree_p->GetEntry(entry);
+
+      sel.setVz(vz_);
+      sel.setHiHF(hiHF_);
+      sel.setPprimaryVertexFilter(pprimaryVertexFilter_);
+      sel.setPhfCoincFilter3(phfCoincFilter3_);
+      sel.setHBHENoiseFilterResultRun2Loose(HBHENoiseFilterResultRun2Loose_);
+      sel.setPclusterCompatibilityFilter(pclusterCompatibilityFilter_);
+
+      if(!sel.isGood()) continue;
 
       Int_t centPos = -1;
       for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -153,19 +217,21 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
 
       if(centPos < 0) continue;
 
-      if(rhoFlowFitParams_p->size() != 0){
-	double val = ROOT::Math::chisquared_cdf_c(rhoFlowFitParams_p->at(5), rhoFlowFitParams_p->at(6));
-        bool minProb = val > .05;
-        bool maxProb = val < .95;
-
-	if(minProb && maxProb){
-	  v2_h[centPos]->Fill(rhoFlowFitParams_p->at(1));
-	  v3_h[centPos]->Fill(rhoFlowFitParams_p->at(3));
-	}
+      for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+	if(rhoFlowFitParams_p.at(fI)->size() != 0){
+	  double val = ROOT::Math::chisquared_cdf_c(rhoFlowFitParams_p.at(fI)->at(5), rhoFlowFitParams_p.at(fI)->at(6));
+	  bool minProb = val > .05;
+	  bool maxProb = val < .95;
+	  
+	  if(minProb && maxProb){
+	    v2_h[centPos][fI]->Fill(rhoFlowFitParams_p.at(fI)->at(1));
+	    v3_h[centPos][fI]->Fill(rhoFlowFitParams_p.at(fI)->at(3));
+	  }
       }
-
-      ++totEntries;
-      if(totEntries >= nMaxEntries) break;
+	
+	++totEntries;
+	if(totEntries >= nMaxEntries) break;
+      }
     }
 
     inFile_p->Close();
@@ -174,40 +240,43 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
     if(totEntries >= nMaxEntries) break;
   }
 
-  TFile* f_raw=new TFile("/afs/cern.ch/user/s/skanaski/jet_stuff/CMSRooJR/v2v3data/V2_eta1p0_Raw.root");
-  CustomCanvas* c_temp=new CustomCanvas("c_temp","",600,600);
+  TFile* f_raw = new TFile("/afs/cern.ch/work/c/cmcginn/private/Projects/CMSRooJR/v2v3data/V2_eta1p0_Raw.root", "READ");
+  CustomCanvas* c_temp = new CustomCanvas("c_temp","",600,600);
   TF1* f_fit=new TF1("f_gaus","gaus",0,0.3);
   TH1F* h_dummy;
   outFile_p->cd();
 
   gStyle->SetOptFit(1);
+  gStyle->SetOptStat(0);
 
   gSystem->cd("pdfDir");
   
   for(Int_t cI = 0; cI < nCentBins; ++cI){
-    v2_h[cI]->Write("", TObject::kOverwrite);
-    v3_h[cI]->Write("", TObject::kOverwrite);
+    for(Int_t fI = 0; fI < nFlowTypes; ++fI){
+      v2_h[cI][fI]->Write("", TObject::kOverwrite);
+      v3_h[cI][fI]->Write("", TObject::kOverwrite);
+    }
 
     //    v2_h[cI]=(TH1F*)v2_h[cI]->Rebin(100,((std::string)v2_h[cI]->GetName()+"rebin").c_str(),rebinning);
-    v2_h[cI]->Fit(f_fit);
+    v2_h[cI][0]->Fit(f_fit);
     TF1* f_v2=new TF1(("f_gaus_v2_"+std::to_string(cI)).c_str(),"gaus",(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
-    v2_h[cI]->Fit(f_v2,"r");
-    h_dummy=new TH1F(("h_tmp_v2_"+std::to_string(cI)).c_str(),v2_h[cI]->GetTitle(),100,(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
-    h_dummy->SetMaximum(1.2*v2_h[cI]->GetBinContent(v2_h[cI]->GetMaximumBin()));
+    v2_h[cI][0]->Fit(f_v2,"r");
+    h_dummy=new TH1F(("h_tmp_v2_"+std::to_string(cI)).c_str(),v2_h[cI][0]->GetTitle(),100,(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
+    h_dummy->SetMaximum(1.2*v2_h[cI][0]->GetBinContent(v2_h[cI][0]->GetMaximumBin()));
     h_dummy->Draw();
-    v2_h[cI]->Draw("e same");
+    v2_h[cI][0]->Draw("e same");
     f_v2->Draw("same");
-    c_temp->SaveAs(("v2_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + ".pdf").c_str());
+    c_temp->SaveAs(("v2_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + ".pdf").c_str());
     gPad->SetLogy();
     h_dummy->Draw();
-    v2_h[cI]->Draw("e same");
+    v2_h[cI][0]->Draw("e same");
     f_v2->Draw("same");
-    c_temp->SaveAs(("v2_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_log.pdf").c_str());
+    c_temp->SaveAs(("v2_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + "_log.pdf").c_str());
     gPad->SetLogy(0);
     v2_Mean_h->SetBinContent(cI+1, f_fit->GetParameter(1));
     v2_Mean_h->SetBinError(cI+1, f_fit->GetParError(1));
-    //    v2_Mean_h->SetBinContent(cI+1, v2_h[cI]->GetMean());
-    //    v2_Mean_h->SetBinError(cI+1, v2_h[cI]->GetMeanError());
+    //    v2_Mean_h->SetBinContent(cI+1, v2_h[cI][0]->GetMean());
+    //    v2_Mean_h->SetBinError(cI+1, v2_h[cI][0]->GetMeanError());
 
     TH1F* h_tmp=(TH1F*)f_raw->Get(("qwebye/hVnFull_c"+std::to_string(cI+1)).c_str());
     //    h_tmp=(TH1F*)h_tmp->Rebin(100,((std::string)h_tmp->GetName()+"rebin").c_str(),rebinning);
@@ -219,33 +288,33 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
     h_dummy->Draw();
     h_tmp->Draw("e same");
     f_raw->Draw("same");
-    c_temp->SaveAs(("raw_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + ".pdf").c_str());
+    c_temp->SaveAs(("raw_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + ".pdf").c_str());
     gPad->SetLogy();
     h_dummy->Draw();
     h_tmp->Draw("e same");
     f_raw->Draw("same");
-    c_temp->SaveAs(("raw_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_log.pdf").c_str());
+    c_temp->SaveAs(("raw_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + "_log.pdf").c_str());
     gPad->SetLogy(0);
     v2_Raw_h->SetBinContent(cI+1, f_fit->GetParameter(1));
     v2_Raw_h->SetBinError(cI+1, f_fit->GetParError(1));
     //    v2_Raw_h->SetBinContent(cI+1, h_tmp->GetMean());
     //    v2_Raw_h->SetBinError(cI+1, h_tmp->GetMeanError());
 
-    //    v3_h[cI]=(TH1F*)v3_h[cI]->Rebin(100,((std::string)v3_h[cI]->GetName()+"rebin").c_str(),rebinning);
-    v3_h[cI]->Fit(f_fit);
+    //    v3_h[cI][0]=(TH1F*)v3_h[cI][0]->Rebin(100,((std::string)v3_h[cI][0]->GetName()+"rebin").c_str(),rebinning);
+    v3_h[cI][0]->Fit(f_fit);
     TF1* f_v3=new TF1(("f_gaus_v3_"+std::to_string(cI)).c_str(),"gaus",(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
-    v3_h[cI]->Fit(f_v3,"r");
-    h_dummy=new TH1F(("h_tmp_v3_"+std::to_string(cI)).c_str(),v3_h[cI]->GetTitle(),100,(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
-    h_dummy->SetMaximum(1.2*v3_h[cI]->GetBinContent(v3_h[cI]->GetMaximumBin()));
+    v3_h[cI][0]->Fit(f_v3,"r");
+    h_dummy=new TH1F(("h_tmp_v3_"+std::to_string(cI)).c_str(),v3_h[cI][0]->GetTitle(),100,(f_fit->GetParameter(1)>2*f_fit->GetParameter(2))?(f_fit->GetParameter(1)-2*f_fit->GetParameter(2)):0,f_fit->GetParameter(1)+2*f_fit->GetParameter(2));
+    h_dummy->SetMaximum(1.2*v3_h[cI][0]->GetBinContent(v3_h[cI][0]->GetMaximumBin()));
     h_dummy->Draw();
-    v3_h[cI]->Draw("e same");
+    v3_h[cI][0]->Draw("e same");
     f_v3->Draw("same");
-    c_temp->SaveAs(("v3_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + ".pdf").c_str());
+    c_temp->SaveAs(("v3_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + ".pdf").c_str());
     gPad->SetLogy();
     h_dummy->Draw();
-    v3_h[cI]->Draw("e same");
+    v3_h[cI][0]->Draw("e same");
     f_v3->Draw("same");
-    c_temp->SaveAs(("v3_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_log.pdf").c_str());
+    c_temp->SaveAs(("v3_Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]) + "_" + dateStr + "_log.pdf").c_str());
     gPad->SetLogy(0);
     v3_Mean_h->SetBinContent(cI+1, f_fit->GetParameter(1));
     v3_Mean_h->SetBinError(cI+1, f_fit->GetParError(1));
@@ -253,8 +322,8 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
     v2_HIN16019_h->SetBinContent(cI+1, centYVals16019[cI]);
     v2_HIN16019_h->SetBinError(cI+1, 0.);
 
-    delete v2_h[cI];
-    delete v3_h[cI];
+    delete v2_h[cI][0];
+    delete v3_h[cI][0];
   }
 
   v2_Mean_h->Write("", TObject::kOverwrite);
@@ -263,7 +332,7 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
 
   v2_HIN16019_h->Write("", TObject::kOverwrite);
 
-  TexSlides(new std::vector<std::vector<std::string>*>{c_temp->GetPointer()},"Slides.tex",2);
+  TexSlides(new std::vector<std::vector<std::string>*>{c_temp->GetPointer()},("Slides_" + dateStr + ".tex").c_str(),2);
   f_raw->Close();
 
   gSystem->cd("..");
@@ -312,8 +381,7 @@ int v2AndV3(const std::string inFileName, const Bool_t isMC = false)
 
   leg_p->Draw("SAME");
 
-  TDatime* date = new TDatime();
-  std::string saveStr = "pdfDir/v2Overlay" + mcStr + "_" + std::to_string(date->GetDate()) + ".pdf";
+  std::string saveStr = "pdfDir/v2Overlay" + mcStr + "_" + dateStr + ".pdf";
   delete date;
   canvV2_p->SaveAs(saveStr.c_str());
 
