@@ -9,6 +9,8 @@
 #include "TMath.h"
 #include "TDatime.h"
 #include "TF1.h"
+#include "TCanvas.h"
+#include "TSystem.h"
 
 //#include "TrkCorr_Jun7_Iterative_PbPb_etaLT2p4/getTrkCorr.h""
 
@@ -24,11 +26,11 @@ int recreateV2V3(const std::string inFileName)
 
   CustomCanvas* c1=new CustomCanvas("c1","c1",400,400);
 
-  TFile* corrFile_p = new TFile("inputs/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
-  TH1F* corrHists_p[nCentBins];
-  for(Int_t cI = 0; cI < nCentBins; ++cI){
-    corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsLow[cI]) + "_" + std::to_string(centBinsHi[cI])).c_str());
-  }
+  //  TFile* corrFile_p = new TFile("inputs/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
+  //  TH1F* corrHists_p[nCentBins];
+  //  for(Int_t cI = 0; cI < nCentBins; ++cI){
+  //    corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsLow[cI]) + "_" + std::to_string(centBinsHi[cI])).c_str());
+  //  }
 
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
@@ -37,11 +39,11 @@ int recreateV2V3(const std::string inFileName)
   TFile* outFile_p = new TFile(("output/v2CrossCheck_" + dateStr + ".root").c_str(), "RECREATE");
   TH1F* v2DeltaPos_h = new TH1F("v2DeltaPos_h", ";#Deltav_{2};Counts", 100, -.2, .2);
   TH1F* v2Pos_h = new TH1F("v2Pos_h", ";v_{2};Counts", 150, 0.0, 0.6);
-  TH1F* v2EffPos_h = new TH1F("v2EffPos_h", ";v_{2};Counts", 150, 0.0, 0.6);
+  //  TH1F* v2EffPos_h = new TH1F("v2EffPos_h", ";v_{2};Counts", 150, 0.0, 0.6);
 
   TH1F* v2DeltaNeg_h = new TH1F("v2DeltaNeg_h", ";#Deltav_{2};Counts", 100, -.2, .2);
   TH1F* v2Neg_h = new TH1F("v2Neg_h", ";v_{2};Counts", 150, 0.0, 0.6);
-  TH1F* v2EffNeg_h = new TH1F("v2EffNeg_h", ";v_{2};Counts", 150, 0.0, 0.6);
+  //  TH1F* v2EffNeg_h = new TH1F("v2EffNeg_h", ";v_{2};Counts", 150, 0.0, 0.6);
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
   TTree* pfTree_p = (TTree*)inFile_p->Get("pfcandAnalyzer/pfTree");
@@ -136,8 +138,8 @@ int recreateV2V3(const std::string inFileName)
 
     std::vector<float> phiPos_;
     std::vector<float> phiNeg_;
-    std::vector<float> effPos_;
-    std::vector<float> effNeg_;
+    //    std::vector<float> effPos_;
+    //    std::vector<float> effNeg_;
 
     int centPos = -1;
     for(Int_t cI = 0; cI < nCentBins; ++cI){
@@ -154,32 +156,32 @@ int recreateV2V3(const std::string inFileName)
       if(pfPt_p->at(pfI) > 3.) continue;
       if(pfId_p->at(pfI) != 1) continue;
 
-      if (pfEta_p->At(pfI)>0){
+      if (pfEta_p->at(pfI)>0){
 	phiPos_.push_back(pfPhi_p->at(pfI));
-	effPos_.push_back(corrHists_p[centPos]->GetBinContent(corrHists_p[centPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI))));
+	//	effPos_.push_back(corrHists_p[centPos]->GetBinContent(corrHists_p[centPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI))));
       }
       else{
 	phiNeg_.push_back(pfPhi_p->at(pfI));
-        effNeg_.push_back(corrHists_p[centPos]->GetBinContent(corrHists_p[centPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI))));
+	//        effNeg_.push_back(corrHists_p[centPos]->GetBinContent(corrHists_p[centPos]->FindBin(pfEta_p->at(pfI), pfPt_p->at(pfI))));
       }
     }
 
     const Int_t nPhiBinsPos = std::fmax(10, phiPos_.size()/30);
     TH1F* phiPos_h = new TH1F("tempPhiPos", ";#phi;Track counts (.3 < p_{T} < 3.,#eta>0)", nPhiBinsPos, -TMath::Pi(), TMath::Pi());
-    TH1F* phiEffPos_h = new TH1F("tempPhiEffPos", ";#phi;Track counts (.3 < p_{T} < 3.,#eta>0)", nPhiBinsPos, -TMath::Pi(), TMath::Pi());
+    //    TH1F* phiEffPos_h = new TH1F("tempPhiEffPos", ";#phi;Track counts (.3 < p_{T} < 3.,#eta>0)", nPhiBinsPos, -TMath::Pi(), TMath::Pi());
 
     const Int_t nPhiBinsNeg = std::fmax(10, phiNeg_.size()/30);
     TH1F* phiNeg_h = new TH1F("tempPhiNeg", ";#phi;Track counts (.3 < p_{T} < 3.,#eta<0)", nPhiBinsNeg, -TMath::Pi(), TMath::Pi());
-    TH1F* phiEffNeg_h = new TH1F("tempPhiEffNeg", ";#phi;Track counts (.3 < p_{T} < 3.,#eta<0)", nPhiBinsNeg, -TMath::Pi(), TMath::Pi());
+    //    TH1F* phiEffNeg_h = new TH1F("tempPhiEffNeg", ";#phi;Track counts (.3 < p_{T} < 3.,#eta<0)", nPhiBinsNeg, -TMath::Pi(), TMath::Pi());
 
     for(unsigned int pfI = 0; pfI < phiPos_.size(); ++pfI){
       phiPos_h->Fill(phiPos_.at(pfI));
-      phiEffPos_h->Fill(phiPos_.at(pfI), 1./effPos_.at(pfI));
+      //      phiEffPos_h->Fill(phiPos_.at(pfI), 1./effPos_.at(pfI));
     }
 
     for(unsigned int pfI = 0; pfI < phiNeg_.size(); ++pfI){
       phiNeg_h->Fill(phiNeg_.at(pfI));
-      phiEffNeg_h->Fill(phiNeg_.at(pfI), 1./effNeg_.at(pfI));
+      //      phiEffNeg_h->Fill(phiNeg_.at(pfI), 1./effNeg_.at(pfI));
     }
 
     std::string flowFitForm = "[0]*(1. + 2.*([1]*TMath::Cos(2.*(x - " + std::to_string(eventPlane2) + ")) + [2]*TMath::Cos(3.*(x - " + std::to_string(eventPlane3) + "))))";
@@ -188,48 +190,48 @@ int recreateV2V3(const std::string inFileName)
     flowFitPos_p->SetParameter(1, 0);
     flowFitPos_p->SetParameter(2, 0);
 
-    TF1* flowFitEffPos_p = new TF1("flowFitEffPos", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
+    /*    TF1* flowFitEffPos_p = new TF1("flowFitEffPos", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
     flowFitEffPos_p->SetParameter(0, 10);
     flowFitEffPos_p->SetParameter(1, 0);
     flowFitEffPos_p->SetParameter(2, 0);
-
+    */
     phiPos_h->Fit(flowFitPos_p, "Q", "", -TMath::Pi(), TMath::Pi());
-    phiEffPos_h->Fit(flowFitEffPos_p, "Q", "", -TMath::Pi(), TMath::Pi());
+    //    phiEffPos_h->Fit(flowFitEffPos_p, "Q", "", -TMath::Pi(), TMath::Pi());
 
     if(TMath::Abs(flowFitPos_p->GetParameter(1) - rhoFlowFitParams_p->at(1)) > .2) v2DeltaPos_h->Fill(v2DeltaPos_h->GetBinCenter(1));
     else v2DeltaPos_h->Fill(flowFitPos_p->GetParameter(1) - rhoFlowFitParams_p->at(1));
 
     v2Pos_h->Fill(flowFitPos_p->GetParameter(1));
-    v2EffPos_h->Fill(flowFitEffPos_p->GetParameter(1));
+    //    v2EffPos_h->Fill(flowFitEffPos_p->GetParameter(1));
 
     TF1* flowFitNeg_p = new TF1("flowFitNeg", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
     flowFitNeg_p->SetParameter(0, 10);
     flowFitNeg_p->SetParameter(1, 0);
     flowFitNeg_p->SetParameter(2, 0);
 
-    TF1* flowFitEffNeg_p = new TF1("flowFitEffNeg", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
+    /*    TF1* flowFitEffNeg_p = new TF1("flowFitEffNeg", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
     flowFitEffNeg_p->SetParameter(0, 10);
     flowFitEffNeg_p->SetParameter(1, 0);
     flowFitEffNeg_p->SetParameter(2, 0);
-
+    */
     phiNeg_h->Fit(flowFitNeg_p, "Q", "", -TMath::Pi(), TMath::Pi());
-    phiEffNeg_h->Fit(flowFitEffNeg_p, "Q", "", -TMath::Pi(), TMath::Pi());
+    //    phiEffNeg_h->Fit(flowFitEffNeg_p, "Q", "", -TMath::Pi(), TMath::Pi());
 
     if(TMath::Abs(flowFitNeg_p->GetParameter(1) - rhoFlowFitParams_p->at(1)) > .2) v2DeltaNeg_h->Fill(v2DeltaNeg_h->GetBinCenter(1));
     else v2DeltaNeg_h->Fill(flowFitNeg_p->GetParameter(1) - rhoFlowFitParams_p->at(1));
 
     v2Neg_h->Fill(flowFitNeg_p->GetParameter(1));
-    v2EffNeg_h->Fill(flowFitEffNeg_p->GetParameter(1));
+    //    v2EffNeg_h->Fill(flowFitEffNeg_p->GetParameter(1));
 
     delete flowFitPos_p;
-    delete flowFitEffPos_p;
+    //    delete flowFitEffPos_p;
     delete phiPos_h;
-    delete phiEffPos_h;
+    //    delete phiEffPos_h;
 
     delete flowFitPos_p;
-    delete flowFitEffPos_p;
+    //    delete flowFitEffPos_p;
     delete phiPos_h;
-    delete phiEffPos_h;
+    //    delete phiEffPos_h;
   }
 
   inFile_p->Close();
@@ -246,21 +248,21 @@ int recreateV2V3(const std::string inFileName)
   outFile_p->cd();
   v2DeltaPos_h->Write("", TObject::kOverwrite);
   v2Pos_h->Write("", TObject::kOverwrite);
-  v2EffPos_h->Write("", TObject::kOverwrite);
+  //  v2EffPos_h->Write("", TObject::kOverwrite);
   delete v2DeltaPos_h;
   delete v2Pos_h;
-  delete v2EffPos_h;
+  //  delete v2EffPos_h;
   v2DeltaNeg_h->Write("", TObject::kOverwrite);
   v2Neg_h->Write("", TObject::kOverwrite);
-  v2EffNeg_h->Write("", TObject::kOverwrite);
+  //  v2EffNeg_h->Write("", TObject::kOverwrite);
   delete v2DeltaNeg_h;
   delete v2Neg_h;
-  delete v2EffNeg_h;
+  //  delete v2EffNeg_h;
   outFile_p->Close();
   delete outFile_p;
 
-  corrFile_p->Close();
-  delete corrFile_p;
+  //  corrFile_p->Close();
+  //  delete corrFile_p;
 
   return 0;
 }

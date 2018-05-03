@@ -17,7 +17,7 @@ MKDIR_PDF = mkdir -p $(PWD)/pdfDir
 
 #all: mkdirBin mkdirPdf mkdirOutput makeFullRAAHist_FromTree valgrindTest makeFirstRAAHist_FromTree makeFinalRAAHist_FromTree
 
-all: mkdirBin mkdirPdf mkdirOutput bin/makeFirstRAAHist_FromTree.exe bin/makeFinalRAAHist_FromTree.exe bin/makePlotValidation_FromTree.exe bin/v2AndV3.exe bin/rc.exe
+all: mkdirBin mkdirPdf mkdirOutput bin/recreateV2V3_PosNeg.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -33,6 +33,9 @@ buildAndTest: src/buildAndTest.C
 
 bin/v2AndV3.exe: src/v2AndV3.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -o bin/v2AndV3.exe src/v2AndV3.C
+
+bin/recreateV2V3_PosNeg.exe: src/recreateV2V3_PosNeg.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -o bin/recreateV2V3_PosNeg.exe src/recreateV2V3_PosNeg.C
 
 bin/makeFullRAAHist_FromTree.exe: src/makeFullRAAHist_FromTree.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -I $(ROOUNF) -L $(ROOUNF)  -lRooUnfold -lpthread -o bin/makeFullRAAHist_FromTree.exe src/makeFullRAAHist_FromTree.C
