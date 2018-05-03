@@ -78,13 +78,13 @@ int recreateV2V3(const std::string inFileName)
   hiTree_p->SetBranchStatus("hiBin", 1);
   hiTree_p->SetBranchStatus("vz", 1);
   hiTree_p->SetBranchStatus("hiNevtPlane", 1);
-  hiTree_p->SetBranchStatus("hiEvtPlanes_", 1);
+  hiTree_p->SetBranchStatus("hiEvtPlanes", 1);
 
   hiTree_p->SetBranchAddress("hiHF", &hiHF_);
   hiTree_p->SetBranchAddress("hiBin", &hiBin_);
   hiTree_p->SetBranchAddress("vz", &vz_);
   hiTree_p->SetBranchAddress("hiNevtPlane", &hiNevtPlane_);
-  hiTree_p->SetBranchAddress("hiEvtPlanes_", hiEvtPlanes_);
+  hiTree_p->SetBranchAddress("hiEvtPlanes", hiEvtPlanes_);
 
   Int_t pprimaryVertexFilter_;
   Int_t HBHENoiseFilterResultRun2Loose_;
@@ -121,7 +121,7 @@ int recreateV2V3(const std::string inFileName)
     hiTree_p->GetEntry(entry);
     skimTree_p->GetEntry(entry);
     rhoFlowAnalyzer_p->GetEntry(entry);
-
+    
     sel.setVz(vz_);
     sel.setHiHF(hiHF_);
     sel.setPprimaryVertexFilter(pprimaryVertexFilter_);
@@ -140,7 +140,7 @@ int recreateV2V3(const std::string inFileName)
     std::vector<float> phiNeg_;
     //    std::vector<float> effPos_;
     //    std::vector<float> effNeg_;
-
+    
     int centPos = -1;
     for(Int_t cI = 0; cI < nCentBins; ++cI){
       if(centBinsLow[cI] <= hiBin_/2 && centBinsHi[cI] > hiBin_/2){
@@ -228,9 +228,9 @@ int recreateV2V3(const std::string inFileName)
     delete phiPos_h;
     //    delete phiEffPos_h;
 
-    delete flowFitPos_p;
+    delete flowFitNeg_p;
     //    delete flowFitEffPos_p;
-    delete phiPos_h;
+    delete phiNeg_h;
     //    delete phiEffPos_h;
   }
 
