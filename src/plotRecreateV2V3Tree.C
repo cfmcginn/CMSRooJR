@@ -9,11 +9,13 @@
 #include "TLegend.h"
 #include "TLatex.h"
 #include "TStyle.h"
+#include "TSystem.h"
 
 #include "include/histDefUtility.h"
 #include "include/kirchnerPalette.h"
 #include "include/vanGoghPalette.h"
-
+#include "CustomCanvas.h"
+#include "TexSlides.C"
 
 void setColorStyleLabelTitle(TH1F* inHist_p, const Int_t color, const Int_t style, const Int_t labelSize, const Int_t titleSize)
 {
@@ -63,7 +65,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   TFile* jamesFile_p = new TFile(inJamesFileName.c_str(), "READ");
   TH1F* jamesHist_p[nCentBins];
   TH1F* jamesMean_p = new TH1F("jamesMean_p", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
-  TH1F* jamesSigma_p = new TH1F("jamesSigma_p", ";Centrality (%);#sigma(v_{2}^{obs}", nCentBins, centBins);
+  TH1F* jamesSigma_p = new TH1F("jamesSigma_p", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     jamesHist_p[cI] = (TH1F*)jamesFile_p->Get(("qwebye/hVnFull_c" + std::to_string(cI+1)).c_str());
@@ -153,10 +155,39 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   setColorStyleLabelTitle(v2RawCorr_Sigma_h, vg.getColor(1), flowStyleSet[1], 12, 14);
   setColorStyleLabelTitle(v2ObsCorr_Sigma_h, vg.getColor(2), flowStyleSet[2], 12, 14);
 
+  gSystem->cd("pdfDir");
+
+  CustomCanvas* canv_p = new CustomCanvas("canv_p", "", 450, 450);
+  gStyle->SetOptStat(0);
+
+  Float_t max=jamesMean_p->GetMaximum();
+  if (v2Raw_Mean_h->GetMaximum()>max) max=v2Raw_Mean_h->GetMaximum();
+  if (v2RawCorr_Mean_h->GetMaximum()>max) max=v2RawCorr_Mean_h->GetMaximum();
+  if (v2ObsCorr_Mean_h->GetMaximum()>max) max=v2ObsCorr_Mean_h->GetMaximum();
+  jamesMean_p->SetMaximum(1.5*max);
+  jamesMean_p->Draw("HIST E1 P");
+  v2Raw_Mean_h->Draw("SAME HIST E1 P");
+  v2RawCorr_Mean_h->Draw("SAME HIST E1 P");
+  v2ObsCorr_Mean_h->Draw("SAME HIST E1 P");
+  leg_p->Draw("SAME");
+  canv_p->SaveAs("Mean.pdf");
+
+  max=jamesSigma_p->GetMaximum();
+  if (v2Raw_Sigma_h->GetMaximum()>max) max=v2Raw_Sigma_h->GetMaximum();
+  if (v2RawCorr_Sigma_h->GetMaximum()>max) max=v2RawCorr_Sigma_h->GetMaximum();
+  if (v2ObsCorr_Sigma_h->GetMaximum()>max) max=v2ObsCorr_Sigma_h->GetMaximum();
+  jamesSigma_p->SetMaximum(1.5*max);
+  jamesSigma_p->Draw("HIST E1 P");
+  v2Raw_Sigma_h->Draw("SAME HIST E1 P");
+  v2RawCorr_Sigma_h->Draw("SAME HIST E1 P");
+  v2ObsCorr_Sigma_h->Draw("SAME HIST E1 P");
+  leg_p->Draw("SAME");
+  canv_p->SaveAs("Sigma.pdf");
+
   Float_t yPadBottomFrac = 0.35;
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
-    TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
+    //    TCanvas* canv_p = new TCanvas("canv_p", "", 450, 450);
     canv_p->SetTopMargin(0.01);
     canv_p->SetBottomMargin(0.01);
     canv_p->SetRightMargin(0.01);
@@ -209,14 +240,18 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
     gStyle->SetOptStat(0);
 
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
-    const std::string saveName = "pdfDir/plotRecreateV2James_" + centStr + "_" + dateStr + ".pdf";
+    const std::string saveName = "plotRecreateV2James_" + centStr + "_" + dateStr + ".pdf";
 
     canv_p->SaveAs(saveName.c_str());
 
     delete pads[0];
     delete pads[1];
-    delete canv_p;
   }
+
+  TexSlides(new std::vector<std::vector<std::string>*>{canv_p->GetPointer()},"Slides.tex",1);
+  delete canv_p;
+
+  gSystem->cd("..");
 
   inFile_p->Close();
   delete inFile_p;
