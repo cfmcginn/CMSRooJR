@@ -239,9 +239,9 @@ int recreateV2V3(const std::string inFileName)
 
   gSystem->cd("pdfDir");
   v2Pos_h->Draw();
-  c1->SaveAs("v2Pos.jpg");
+  c1->SaveAs("v2Pos.pdf");
   v2Neg_h->Draw();
-  c1->SaveAs("v2Neg.jpg");
+  c1->SaveAs("v2Neg.pdf");
   TexSlides(new std::vector<std::vector<std::string>*> {c1->GetPointer()},"Slides.tex",1);
   gSystem->cd("..");
 
