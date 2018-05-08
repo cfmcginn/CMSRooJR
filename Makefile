@@ -17,7 +17,7 @@ MKDIR_PDF = mkdir -p $(PWD)/pdfDir
 
 #all: mkdirBin mkdirPdf mkdirOutput makeFullRAAHist_FromTree valgrindTest makeFirstRAAHist_FromTree makeFinalRAAHist_FromTree
 
-all: mkdirBin mkdirPdf mkdirOutput bin/recreateV2V3_PosNeg.exe bin/plotRecreateV2V3Tree.exe
+all: mkdirBin mkdirPdf mkdirOutput bin/recreateV2V3_PosNeg.exe bin/recreateV2V3.exe
 
 mkdirBin:
 	$(MKDIR_BIN)
@@ -36,6 +36,9 @@ bin/v2AndV3.exe: src/v2AndV3.C
 
 bin/recreateV2V3_PosNeg.exe: src/recreateV2V3_PosNeg.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3_PosNeg.exe src/recreateV2V3_PosNeg.C
+
+bin/recreateV2V3.exe: src/recreateV2V3.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3.exe src/recreateV2V3.C
 
 bin/plotRecreateV2V3Tree.exe: src/plotRecreateV2V3Tree.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/plotRecreateV2V3Tree.exe src/plotRecreateV2V3Tree.C
