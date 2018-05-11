@@ -20,7 +20,7 @@ int recreateV2V3(const std::string inFileName)
   const Int_t centBinsLow[nCentBins] = {0, 5, 10, 30, 50};
   const Int_t centBinsHi[nCentBins] = {5, 10, 30, 50, 100};
 
-  TFile* corrFile_p = new TFile("inputs/EffCorrectionsPixel_NTT_pt_0_10_v2.root", "READ");
+  TFile* corrFile_p = new TFile("input/EffCorrectionsPixel_TT_pt_0_10_v2.root", "READ");
   TH1F* corrHists_p[nCentBins];
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsLow[cI]) + "_" + std::to_string(centBinsHi[cI])).c_str());
