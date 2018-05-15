@@ -13,10 +13,10 @@
 
 #include "Math/ProbFuncMathCore.h"
 
-#include "Utility/include/doGlobalDebug.h"
-#include "Utility/include/goodGlobalSelection.h"
-#include "Utility/include/returnRootFileContentsList.h"
-#include "Utility/include/vectorStringUtility.h"
+#include "include/doGlobalDebug.h"
+#include "include/goodGlobalSelection.h"
+#include "include/returnRootFileContentsList.h"
+#include "include/vectorStringUtility.h"
 
 int recreateV2V3Tree(const std::string inFileName)
 {
@@ -24,8 +24,8 @@ int recreateV2V3Tree(const std::string inFileName)
   const Int_t centBinsCorrLow[nCentBinsCorr] = {0, 5, 10, 30, 50};
   const Int_t centBinsCorrHi[nCentBinsCorr] = {5, 10, 30, 50, 100};
 
-  const std::string fullPath = std::getenv("FULLJRDIR");
-  TFile* corrFile_p = new TFile((fullPath + "/FlowChecks/tables/EffCorrectionsPixel_TT_pt_0_10_v2.root").c_str(), "READ");
+  //  const std::string fullPath = std::getenv("FULLJRDIR");
+  TFile* corrFile_p = new TFile("input/EffCorrectionsPixel_TT_pt_0_10_v2.root", "READ");
   TH1F* corrHists_p[nCentBinsCorr];
   for(Int_t cI = 0; cI < nCentBinsCorr; ++cI){
     corrHists_p[cI] = (TH1F*)corrFile_p->Get(("Eff_" + std::to_string(centBinsCorrLow[cI]) + "_" + std::to_string(centBinsCorrHi[cI])).c_str());

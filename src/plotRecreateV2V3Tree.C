@@ -40,7 +40,7 @@ void setColorStyleLabelTitle(TH1F* inHist_p, const Int_t color, const Int_t styl
 int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFileName)
 {
   vanGoghPalette vg;
-  const Int_t flowStyleSet[3] = {33, 34, 21};
+  const Int_t flowStyleSet[4] = {33, 34, 21, 22};
   TDatime* date = new TDatime();
   const std::string dateStr = std::to_string(date->GetDate());
   delete date;
@@ -104,56 +104,66 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   jamesSigma_p->GetYaxis()->SetTitleOffset(jamesHist_p[0]->GetYaxis()->GetTitleOffset());
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
-  TH1F* v2Raw_h[nCentBins];
-  TH1F* v2RawCorr_h[nCentBins];
-  TH1F* v2ObsCorr_h[nCentBins];
+  TH1F* v2Raw_PF_h[nCentBins];
+  TH1F* v2RawCorr_PF_h[nCentBins];
+  TH1F* v2ObsCorr_PF_h[nCentBins];
+  TH1F* v2ObsCorr_Trk_h[nCentBins];
 
-  TH1F* v2Raw_Mean_h = (TH1F*)inFile_p->Get("v2Raw_Mean_h");
-  TH1F* v2Raw_Sigma_h = (TH1F*)inFile_p->Get("v2Raw_Sigma_h");
+  TH1F* v2Raw_Mean_PF_h = (TH1F*)inFile_p->Get("v2Raw_Mean_PF_h");
+  TH1F* v2Raw_Sigma_PF_h = (TH1F*)inFile_p->Get("v2Raw_Sigma_PF_h");
 
-  TH1F* v2RawCorr_Mean_h = (TH1F*)inFile_p->Get("v2RawCorr_Mean_h");
-  TH1F* v2RawCorr_Sigma_h = (TH1F*)inFile_p->Get("v2RawCorr_Sigma_h");
+  TH1F* v2RawCorr_Mean_PF_h = (TH1F*)inFile_p->Get("v2RawCorr_Mean_PF_h");
+  TH1F* v2RawCorr_Sigma_PF_h = (TH1F*)inFile_p->Get("v2RawCorr_Sigma_PF_h");
 
-  TH1F* v2ObsCorr_Mean_h = (TH1F*)inFile_p->Get("v2ObsCorr_Mean_h");
-  TH1F* v2ObsCorr_Sigma_h = (TH1F*)inFile_p->Get("v2ObsCorr_Sigma_h");
+  TH1F* v2ObsCorr_Mean_PF_h = (TH1F*)inFile_p->Get("v2ObsCorr_Mean_PF_h");
+  TH1F* v2ObsCorr_Sigma_PF_h = (TH1F*)inFile_p->Get("v2ObsCorr_Sigma_PF_h");
+
+  TH1F* v2ObsCorr_Mean_Trk_h = (TH1F*)inFile_p->Get("v2ObsCorr_Mean_Trk_h");
+  TH1F* v2ObsCorr_Sigma_Trk_h = (TH1F*)inFile_p->Get("v2ObsCorr_Sigma_Trk_h");
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
-    v2Raw_h[cI] = (TH1F*)inFile_p->Get(("v2Raw_" + centStr + "_h").c_str());
-    v2RawCorr_h[cI] = (TH1F*)inFile_p->Get(("v2RawCorr_" + centStr + "_h").c_str());
-    v2ObsCorr_h[cI] = (TH1F*)inFile_p->Get(("v2ObsCorr_" + centStr + "_h").c_str());
+    v2Raw_PF_h[cI] = (TH1F*)inFile_p->Get(("v2Raw_" + centStr + "_PF_h").c_str());
+    v2RawCorr_PF_h[cI] = (TH1F*)inFile_p->Get(("v2RawCorr_" + centStr + "_PF_h").c_str());
+    v2ObsCorr_PF_h[cI] = (TH1F*)inFile_p->Get(("v2ObsCorr_" + centStr + "_PF_h").c_str());
+    v2ObsCorr_Trk_h[cI] = (TH1F*)inFile_p->Get(("v2ObsCorr_" + centStr + "_Trk_h").c_str());
 
-    centerTitles({v2Raw_h[cI], v2RawCorr_h[cI], v2ObsCorr_h[cI]});
-    setSumW2({v2Raw_h[cI], v2RawCorr_h[cI], v2ObsCorr_h[cI]});
+    centerTitles({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2ObsCorr_Trk_h[cI]});
+    setSumW2({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2ObsCorr_Trk_h[cI]});
 
-    setColorStyleLabelTitle(v2Raw_h[cI], vg.getColor(0), flowStyleSet[0], 12, 14);
-    setColorStyleLabelTitle(v2RawCorr_h[cI], vg.getColor(1), flowStyleSet[1], 12, 14);
-    setColorStyleLabelTitle(v2ObsCorr_h[cI], vg.getColor(2), flowStyleSet[2], 12, 14);
+    setColorStyleLabelTitle(v2Raw_PF_h[cI], vg.getColor(0), flowStyleSet[0], 12, 14);
+    setColorStyleLabelTitle(v2RawCorr_PF_h[cI], vg.getColor(1), flowStyleSet[1], 12, 14);
+    setColorStyleLabelTitle(v2ObsCorr_PF_h[cI], vg.getColor(2), flowStyleSet[2], 12, 14);
+    setColorStyleLabelTitle(v2ObsCorr_Trk_h[cI], vg.getColor(3), flowStyleSet[3], 12, 14);
 
-    v2Raw_h[cI]->Scale(1./v2Raw_h[cI]->Integral());
-    v2RawCorr_h[cI]->Scale(1./v2RawCorr_h[cI]->Integral());
-    v2ObsCorr_h[cI]->Scale(1./v2ObsCorr_h[cI]->Integral());
-    
-    v2Raw_h[cI]->GetYaxis()->SetTitleOffset(jamesHist_p[cI]->GetYaxis()->GetTitleOffset());
-    v2Raw_h[cI]->GetXaxis()->SetTitleOffset(jamesHist_p[cI]->GetYaxis()->GetTitleOffset()*1.5);       
+    v2Raw_PF_h[cI]->Scale(1./v2Raw_PF_h[cI]->Integral());
+    v2RawCorr_PF_h[cI]->Scale(1./v2RawCorr_PF_h[cI]->Integral());
+    v2ObsCorr_PF_h[cI]->Scale(1./v2ObsCorr_PF_h[cI]->Integral());
+    v2ObsCorr_Trk_h[cI]->Scale(1./v2ObsCorr_Trk_h[cI]->Integral());
+
+    v2Raw_PF_h[cI]->GetYaxis()->SetTitleOffset(jamesHist_p[cI]->GetYaxis()->GetTitleOffset());
+    v2Raw_PF_h[cI]->GetXaxis()->SetTitleOffset(jamesHist_p[cI]->GetYaxis()->GetTitleOffset()*1.5);       
 
     if(cI == 0){
-      leg_p->AddEntry(v2Raw_h[cI], "Jet Extraction", "P L");
-      leg_p->AddEntry(v2RawCorr_h[cI], "Eff. Corr.", "P L");
-      leg_p->AddEntry(v2ObsCorr_h[cI], "Eff.+Det. Corr.", "P L");
+      leg_p->AddEntry(v2Raw_PF_h[cI], "Jet Extraction", "P L");
+      leg_p->AddEntry(v2RawCorr_PF_h[cI], "Eff. Corr.", "P L");
+      leg_p->AddEntry(v2ObsCorr_PF_h[cI], "Eff.+Det. Corr.", "P L");
+      leg_p->AddEntry(v2ObsCorr_Trk_h[cI], "Eff.,Det.,Trk.", "P L");
     }
   }
 
-  centerTitles({v2Raw_Mean_h, v2Raw_Sigma_h, v2RawCorr_Mean_h, v2RawCorr_Sigma_h, v2ObsCorr_Mean_h, v2ObsCorr_Sigma_h});
-  setSumW2({v2Raw_Mean_h, v2Raw_Sigma_h, v2RawCorr_Mean_h, v2RawCorr_Sigma_h, v2ObsCorr_Mean_h, v2ObsCorr_Sigma_h});
+  centerTitles({v2Raw_Mean_PF_h, v2Raw_Sigma_PF_h, v2RawCorr_Mean_PF_h, v2RawCorr_Sigma_PF_h, v2ObsCorr_Mean_PF_h, v2ObsCorr_Sigma_PF_h, v2ObsCorr_Mean_Trk_h, v2ObsCorr_Sigma_Trk_h});
+  setSumW2({v2Raw_Mean_PF_h, v2Raw_Sigma_PF_h, v2RawCorr_Mean_PF_h, v2RawCorr_Sigma_PF_h, v2ObsCorr_Mean_PF_h, v2ObsCorr_Sigma_PF_h, v2ObsCorr_Mean_Trk_h, v2ObsCorr_Sigma_Trk_h});
 
-  setColorStyleLabelTitle(v2Raw_Mean_h, vg.getColor(0), flowStyleSet[0], 12, 14);
-  setColorStyleLabelTitle(v2RawCorr_Mean_h, vg.getColor(1), flowStyleSet[1], 12, 14);
-  setColorStyleLabelTitle(v2ObsCorr_Mean_h, vg.getColor(2), flowStyleSet[2], 12, 14);
+  setColorStyleLabelTitle(v2Raw_Mean_PF_h, vg.getColor(0), flowStyleSet[0], 12, 14);
+  setColorStyleLabelTitle(v2RawCorr_Mean_PF_h, vg.getColor(1), flowStyleSet[1], 12, 14);
+  setColorStyleLabelTitle(v2ObsCorr_Mean_PF_h, vg.getColor(2), flowStyleSet[2], 12, 14);
+  setColorStyleLabelTitle(v2ObsCorr_Mean_Trk_h, vg.getColor(3), flowStyleSet[3], 12, 14);
 
-  setColorStyleLabelTitle(v2Raw_Sigma_h, vg.getColor(0), flowStyleSet[0], 12, 14);
-  setColorStyleLabelTitle(v2RawCorr_Sigma_h, vg.getColor(1), flowStyleSet[1], 12, 14);
-  setColorStyleLabelTitle(v2ObsCorr_Sigma_h, vg.getColor(2), flowStyleSet[2], 12, 14);
+  setColorStyleLabelTitle(v2Raw_Sigma_PF_h, vg.getColor(0), flowStyleSet[0], 12, 14);
+  setColorStyleLabelTitle(v2RawCorr_Sigma_PF_h, vg.getColor(1), flowStyleSet[1], 12, 14);
+  setColorStyleLabelTitle(v2ObsCorr_Sigma_PF_h, vg.getColor(2), flowStyleSet[2], 12, 14);
+  setColorStyleLabelTitle(v2ObsCorr_Sigma_Trk_h, vg.getColor(3), flowStyleSet[3], 12, 14);
 
   gSystem->cd("pdfDir");
 
@@ -161,26 +171,30 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   gStyle->SetOptStat(0);
 
   Float_t max=jamesMean_p->GetMaximum();
-  if (v2Raw_Mean_h->GetMaximum()>max) max=v2Raw_Mean_h->GetMaximum();
-  if (v2RawCorr_Mean_h->GetMaximum()>max) max=v2RawCorr_Mean_h->GetMaximum();
-  if (v2ObsCorr_Mean_h->GetMaximum()>max) max=v2ObsCorr_Mean_h->GetMaximum();
+  if (v2Raw_Mean_PF_h->GetMaximum()>max) max=v2Raw_Mean_PF_h->GetMaximum();
+  if (v2RawCorr_Mean_PF_h->GetMaximum()>max) max=v2RawCorr_Mean_PF_h->GetMaximum();
+  if (v2ObsCorr_Mean_PF_h->GetMaximum()>max) max=v2ObsCorr_Mean_PF_h->GetMaximum();
+  if (v2ObsCorr_Mean_Trk_h->GetMaximum()>max) max=v2ObsCorr_Mean_Trk_h->GetMaximum();
   jamesMean_p->SetMaximum(1.5*max);
   jamesMean_p->Draw("HIST E1 P");
-  v2Raw_Mean_h->Draw("SAME HIST E1 P");
-  v2RawCorr_Mean_h->Draw("SAME HIST E1 P");
-  v2ObsCorr_Mean_h->Draw("SAME HIST E1 P");
+  v2Raw_Mean_PF_h->Draw("SAME HIST E1 P");
+  v2RawCorr_Mean_PF_h->Draw("SAME HIST E1 P");
+  v2ObsCorr_Mean_PF_h->Draw("SAME HIST E1 P");
+  v2ObsCorr_Mean_Trk_h->Draw("SAME HSIT E1 P");
   leg_p->Draw("SAME");
   canv_p->SaveAs("Mean.pdf");
 
   max=jamesSigma_p->GetMaximum();
-  if (v2Raw_Sigma_h->GetMaximum()>max) max=v2Raw_Sigma_h->GetMaximum();
-  if (v2RawCorr_Sigma_h->GetMaximum()>max) max=v2RawCorr_Sigma_h->GetMaximum();
-  if (v2ObsCorr_Sigma_h->GetMaximum()>max) max=v2ObsCorr_Sigma_h->GetMaximum();
+  if (v2Raw_Sigma_PF_h->GetMaximum()>max) max=v2Raw_Sigma_PF_h->GetMaximum();
+  if (v2RawCorr_Sigma_PF_h->GetMaximum()>max) max=v2RawCorr_Sigma_PF_h->GetMaximum();
+  if (v2ObsCorr_Sigma_PF_h->GetMaximum()>max) max=v2ObsCorr_Sigma_PF_h->GetMaximum();
+  if (v2ObsCorr_Sigma_Trk_h->GetMaximum()>max) max=v2ObsCorr_Sigma_Trk_h->GetMaximum();
   jamesSigma_p->SetMaximum(1.5*max);
-  jamesSigma_p->Draw("HIST E1 P");
-  v2Raw_Sigma_h->Draw("SAME HIST E1 P");
-  v2RawCorr_Sigma_h->Draw("SAME HIST E1 P");
-  v2ObsCorr_Sigma_h->Draw("SAME HIST E1 P");
+  jamesSigma_p->Draw("HIST P");
+  v2Raw_Sigma_PF_h->Draw("SAME HIST P");
+  v2RawCorr_Sigma_PF_h->Draw("SAME HIST P");
+  v2ObsCorr_Sigma_PF_h->Draw("SAME HIST P");
+  v2ObsCorr_Sigma_Trk_h->Draw("SAME HIST P");
   leg_p->Draw("SAME");
   canv_p->SaveAs("Sigma.pdf");
 
@@ -203,10 +217,11 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
     pads[0]->Draw("SAME");
     pads[0]->cd();
     
-    jamesHist_p[cI]->DrawCopy("HIST E1 P");
-    v2Raw_h[cI]->DrawCopy("HIST E1 P SAME");
-    v2RawCorr_h[cI]->DrawCopy("HIST E1 P SAME");
-    v2ObsCorr_h[cI]->DrawCopy("HIST E1 P SAME");
+    jamesHist_p[cI]->DrawCopy("HIST P");
+    v2Raw_PF_h[cI]->DrawCopy("HIST P SAME");
+    v2RawCorr_PF_h[cI]->DrawCopy("HIST P SAME");
+    v2ObsCorr_PF_h[cI]->DrawCopy("HIST P SAME");
+    v2ObsCorr_Trk_h[cI]->DrawCopy("HIST P SAME");
 
     const std::string centStr2 = std::to_string(centBinsLow[cI]) + "-" + std::to_string(centBinsHi[cI]) + "%";
 
@@ -224,18 +239,20 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
     pads[1]->cd();
 
 
-    v2Raw_h[cI]->Divide(jamesHist_p[cI]);
-    v2RawCorr_h[cI]->Divide(jamesHist_p[cI]);
-    v2ObsCorr_h[cI]->Divide(jamesHist_p[cI]);
+    v2Raw_PF_h[cI]->Divide(jamesHist_p[cI]);
+    v2RawCorr_PF_h[cI]->Divide(jamesHist_p[cI]);
+    v2ObsCorr_PF_h[cI]->Divide(jamesHist_p[cI]);
+    v2ObsCorr_Trk_h[cI]->Divide(jamesHist_p[cI]);
     
-    v2Raw_h[cI]->SetMinimum(0.55);
-    v2Raw_h[cI]->SetMaximum(1.45);
+    v2Raw_PF_h[cI]->SetMinimum(0.55);
+    v2Raw_PF_h[cI]->SetMaximum(1.45);
     
-    v2Raw_h[cI]->GetYaxis()->SetNdivisions(505);
+    v2Raw_PF_h[cI]->GetYaxis()->SetNdivisions(505);
 
-    v2Raw_h[cI]->DrawCopy("HIST E1 P");
-    v2RawCorr_h[cI]->DrawCopy("SAME HIST E1 P");
-    v2ObsCorr_h[cI]->DrawCopy("SAME HIST E1 P");
+    v2Raw_PF_h[cI]->DrawCopy("HIST P");
+    v2RawCorr_PF_h[cI]->DrawCopy("SAME HIST P");
+    v2ObsCorr_PF_h[cI]->DrawCopy("SAME HIST P");
+    v2ObsCorr_Trk_h[cI]->DrawCopy("SAME HIST P");
     
     gStyle->SetOptStat(0);
 
