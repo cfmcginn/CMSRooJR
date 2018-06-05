@@ -37,6 +37,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2Obs_Trk_h[nCentBins];
   TH1F* v2ObsCorr_Trk_h[nCentBins];
 
+  TH1F* compRaw_h[nCentBins];
+  TH1F* compRawCorr_h[nCentBins];
+  
+  TH1F* compObs_h[nCentBins];
+  TH1F* compObsCorr_h[nCentBins];
+
   TH1F* v2Raw_Mean_PF_h = new TH1F("v2Raw_Mean_PF_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
   TH1F* v2Raw_Sigma_PF_h = new TH1F("v2Raw_Sigma_PF_h", ";Centrality (%);#sigma(v_{2}^{raw})", nCentBins, centBins);
   TH1F* v2RawCorr_Mean_PF_h = new TH1F("v2RawCorr_Mean_PF_h", ";Centrality (%);#LTv_{2}^{raw}#GT", nCentBins, centBins);
@@ -57,6 +63,16 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2ObsCorr_Mean_Trk_h = new TH1F("v2ObsCorr_Mean_Trk_h", ";Centrality (%);#LTv_{2}^{obs}#GT", nCentBins, centBins);
   TH1F* v2ObsCorr_Sigma_Trk_h = new TH1F("v2ObsCorr_Sigma_Trk_h", ";Centrality (%);#sigma(v_{2}^{obs})", nCentBins, centBins);
 
+  TH1F* compRaw_Mean_h = new TH1F("compRaw_Mean_h", ";Centrality (%);#LTv_{2,trk}^{raw}/v_{2,PF}^{raw}#GT", nCentBins, centBins);
+  TH1F* compRaw_Sigma_h = new TH1F("compRaw_Sigma_h", ";Centrality (%);#sigma(v_{2,trk}^{raw}/v_{2,PF}^{raw})", nCentBins, centBins);
+  TH1F* compRawCorr_Mean_h = new TH1F("compRawCorr_Mean_h", ";Centrality (%);#LTv_{2,trk}^{raw}/v_{2,PF}^{raw}#GT", nCentBins, centBins);
+  TH1F* compRawCorr_Sigma_h = new TH1F("compRawCorr_Sigma_h", ";Centrality (%);#sigma(v_{2,trk}^{raw}/v_{2,PF}^{raw})", nCentBins, centBins);
+
+  TH1F* compObs_Mean_h = new TH1F("compObs_Mean_h", ";Centrality (%);#LTv_{2,trk}^{obs}/v_{2,PF}^{obs}#GT", nCentBins, centBins);
+  TH1F* compObs_Sigma_h = new TH1F("compObs_Sigma_h", ";Centrality (%);#sigma(v_{2,trk}^{obs}/v_{2,PF}^{obs})", nCentBins, centBins);
+  TH1F* compObsCorr_Mean_h = new TH1F("compObsCorr_Mean_h", ";Centrality (%);#LTv_{2,trk}^{obs}/v_{2,PF}^{obs}#GT", nCentBins, centBins);
+  TH1F* compObsCorr_Sigma_h = new TH1F("compObsCorr_Sigma_h", ";Centrality (%);#sigma(v_{2,trk}^{obs}/v_{2,PF}^{obs})", nCentBins, centBins);
+
   for(Int_t cI = 0; cI < nCentBins; ++cI){
     const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
     v2Raw_PF_h[cI] = new TH1F(("v2Raw_" + centStr + "_PF_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
@@ -68,6 +84,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2RawCorr_Trk_h[cI] = new TH1F(("v2RawCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2Obs_Trk_h[cI] = new TH1F(("v2Obs_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2ObsCorr_Trk_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    
+    compRaw_h[cI] = new TH1F(("compRaw_" + centStr + "_h").c_str(), ";v_{2,trk}/v_{2,PF};Counts", 150, 0.0, 0.6);
+    compRawCorr_h[cI] = new TH1F(("compRawCorr_" + centStr + "_h").c_str(), ";v_{2,trk}/v_{2,PF};Counts", 150, 0.0, 0.6);
+    compObs_h[cI] = new TH1F(("compObs_" + centStr + "_h").c_str(), ";v_{2,trk}/v_{2,PF};Counts", 150, 0.0, 0.6);
+    compObsCorr_h[cI] = new TH1F(("compObsCorr_" + centStr + "_h").c_str(), ";v_{2,trk}/v_{2,PF};Counts", 150, 0.0, 0.6);
   }
 
   TFile* inFile_p = new TFile(inFileName.c_str(), "READ");
@@ -166,7 +187,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
   
     for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
       double tempWeightPF = pfWeight_p->at(pfI);
-      double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+      //      double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+      double deltaEventPhi = pfPhi_p->at(pfI);
 
       v2xRawPF += TMath::Cos(2*(deltaEventPhi));
       v2yRawPF += TMath::Sin(2*(deltaEventPhi));
@@ -183,7 +205,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
 	//	if(trkPt_p->at(tI) >= 2.4) continue;
 	trkCounter++;
 	double tempWeightTrk = trkWeight_p->at(tI);
-	double deltaEventPhi = trkPhi_p->at(tI) - hiEvt2Plane_;
+	//	double deltaEventPhi = trkPhi_p->at(tI) - hiEvt2Plane_;
+	double deltaEventPhi = trkPhi_p->at(tI);
 	
 	v2xRawTrk += TMath::Cos(2*(deltaEventPhi));
 	v2yRawTrk += TMath::Sin(2*(deltaEventPhi));
@@ -226,7 +249,10 @@ int recreateV2V3TreeHist(const std::string inFileName)
       
       v2Raw_Trk_h[centPos]->Fill(v2RawTrk);
       v2RawCorr_Trk_h[centPos]->Fill(v2RawTrkCorr);
-      
+
+      compRaw_h[centPos]->Fill(v2RawTrk/v2RawPF);
+      compRawCorr_h[centPos]->Fill(v2RawTrkCorr/v2RawPFCorr);
+   
       globalN[centPos] += 1;
       globalV2XRawTrk[centPos] += v2xRawTrk;
       globalV2YRawTrk[centPos] += v2yRawTrk;
@@ -284,7 +310,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
   
     for(unsigned pfI = 0; pfI < pfPhi_p->size(); pfI++){
       double tempWeightPF = pfWeight_p->at(pfI);
-      double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+      //double deltaEventPhi = pfPhi_p->at(pfI) - hiEvt2Plane_;
+      double deltaEventPhi = pfPhi_p->at(pfI);
 
       v2xObsPF += TMath::Cos(2*(deltaEventPhi));
       v2yObsPF += TMath::Sin(2*(deltaEventPhi));
@@ -310,7 +337,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
 	//	if(trkPt_p->at(tI) >= 2.4) continue;
 	trkCounter++;
 	double tempWeightTrk = trkWeight_p->at(tI);
-	double deltaEventPhi = trkPhi_p->at(tI) - hiEvt2Plane_;
+	//	double deltaEventPhi = trkPhi_p->at(tI) - hiEvt2Plane_;
+	double deltaEventPhi = trkPhi_p->at(tI);
 	
 	v2xObsTrk += TMath::Cos(2*(deltaEventPhi));
 	v2yObsTrk += TMath::Sin(2*(deltaEventPhi));
@@ -359,6 +387,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
       
       v2Obs_Trk_h[centPos]->Fill(v2ObsTrk);
       v2ObsCorr_Trk_h[centPos]->Fill(v2ObsTrkCorr);
+
+      compObs_h[centPos]->Fill(v2ObsTrk/v2ObsPF);
+      compObsCorr_h[centPos]->Fill(v2ObsTrkCorr/v2ObsPFCorr);
     }
   }
 
@@ -451,6 +482,32 @@ int recreateV2V3TreeHist(const std::string inFileName)
       v2ObsCorr_Mean_Trk_h->SetBinError(cI+1, v2ObsCorr_Trk_h[cI]->GetMeanError());
       v2ObsCorr_Sigma_Trk_h->SetBinContent(cI+1, v2ObsCorr_Trk_h[cI]->GetStdDev());
       v2ObsCorr_Sigma_Trk_h->SetBinError(cI+1, v2ObsCorr_Trk_h[cI]->GetStdDevError());
+
+      compRaw_h[cI]->Write("", TObject::kOverwrite);
+      compRawCorr_h[cI]->Write("", TObject::kOverwrite);
+
+      compObs_h[cI]->Write("", TObject::kOverwrite);
+      compObsCorr_h[cI]->Write("", TObject::kOverwrite);
+
+      compRaw_Mean_h->SetBinContent(cI+1, compRaw_h[cI]->GetMean());
+      compRaw_Mean_h->SetBinError(cI+1, compRaw_h[cI]->GetMeanError());
+      compRaw_Sigma_h->SetBinContent(cI+1, compRaw_h[cI]->GetStdDev());
+      compRaw_Sigma_h->SetBinError(cI+1, compRaw_h[cI]->GetStdDevError());
+
+      compRawCorr_Mean_h->SetBinContent(cI+1, compRawCorr_h[cI]->GetMean());
+      compRawCorr_Mean_h->SetBinError(cI+1, compRawCorr_h[cI]->GetMeanError());
+      compRawCorr_Sigma_h->SetBinContent(cI+1, compRawCorr_h[cI]->GetStdDev());
+      compRawCorr_Sigma_h->SetBinError(cI+1, compRawCorr_h[cI]->GetStdDevError());
+
+      compObs_Mean_h->SetBinContent(cI+1, compObs_h[cI]->GetMean());
+      compObs_Mean_h->SetBinError(cI+1, compObs_h[cI]->GetMeanError());
+      compObs_Sigma_h->SetBinContent(cI+1, compObs_h[cI]->GetStdDev());
+      compObs_Sigma_h->SetBinError(cI+1, compObs_h[cI]->GetStdDevError());
+
+      compObsCorr_Mean_h->SetBinContent(cI+1, compObsCorr_h[cI]->GetMean());
+      compObsCorr_Mean_h->SetBinError(cI+1, compObsCorr_h[cI]->GetMeanError());
+      compObsCorr_Sigma_h->SetBinContent(cI+1, compObsCorr_h[cI]->GetStdDev());
+      compObsCorr_Sigma_h->SetBinError(cI+1, compObsCorr_h[cI]->GetStdDevError());
     }
 
     delete v2Raw_Trk_h[cI];
@@ -458,6 +515,12 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
     delete v2Obs_Trk_h[cI];
     delete v2ObsCorr_Trk_h[cI];
+
+    delete compRaw_h[cI];
+    delete compRawCorr_h[cI];
+    
+    delete compObs_h[cI];
+    delete compObsCorr_h[cI];
   }
 
   v2Raw_Mean_Trk_h->Write("", TObject::kOverwrite);
@@ -472,6 +535,18 @@ int recreateV2V3TreeHist(const std::string inFileName)
   v2ObsCorr_Mean_Trk_h->Write("", TObject::kOverwrite);
   v2ObsCorr_Sigma_Trk_h->Write("", TObject::kOverwrite);
 
+  compRaw_Mean_h->Write("", TObject::kOverwrite);
+  compRaw_Sigma_h->Write("", TObject::kOverwrite);
+
+  compRawCorr_Mean_h->Write("", TObject::kOverwrite);
+  compRawCorr_Sigma_h->Write("", TObject::kOverwrite);
+
+  compObs_Mean_h->Write("", TObject::kOverwrite);
+  compObs_Sigma_h->Write("", TObject::kOverwrite);
+
+  compObsCorr_Mean_h->Write("", TObject::kOverwrite);
+  compObsCorr_Sigma_h->Write("", TObject::kOverwrite);
+
   if(hasTrk){
     delete v2Raw_Mean_Trk_h;
     delete v2Raw_Sigma_Trk_h;
@@ -482,6 +557,16 @@ int recreateV2V3TreeHist(const std::string inFileName)
     delete v2Obs_Sigma_Trk_h;
     delete v2ObsCorr_Mean_Trk_h;
     delete v2ObsCorr_Sigma_Trk_h;
+
+    delete compRaw_Mean_h;
+    delete compRaw_Sigma_h;
+    delete compRawCorr_Mean_h;
+    delete compRawCorr_Sigma_h;
+
+    delete compObs_Mean_h;
+    delete compObs_Sigma_h;
+    delete compObsCorr_Mean_h;
+    delete compObsCorr_Sigma_h;
   }
 
   outFile_p->Close();
