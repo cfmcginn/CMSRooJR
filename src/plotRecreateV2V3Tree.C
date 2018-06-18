@@ -17,6 +17,7 @@
 #include "CustomCanvas.h"
 #include "TexSlides.C"
 
+
 void setColorStyleLabelTitle(TH1F* inHist_p, const Int_t color, const Int_t style, const Int_t labelSize, const Int_t titleSize)
 {
   inHist_p->SetLineColor(color);
@@ -122,6 +123,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   TH1F* v2Raw_PF_h[nCentBins];
   TH1F* v2RawCorr_PF_h[nCentBins];
   TH1F* v2ObsCorr_PF_h[nCentBins];
+  TH1F* v2Comp_h[nCentBins];
 
   TH1F* v2Raw_Trk_h[nCentBins];
   TH1F* v2RawCorr_Trk_h[nCentBins];
@@ -150,17 +152,19 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
     v2Raw_PF_h[cI] = (TH1F*)inFile_p->Get(("v2Raw_" + centStr + "_PF_h").c_str());
     v2RawCorr_PF_h[cI] = (TH1F*)inFile_p->Get(("v2RawCorr_" + centStr + "_PF_h").c_str());
     v2ObsCorr_PF_h[cI] = (TH1F*)inFile_p->Get(("v2ObsCorr_" + centStr + "_PF_h").c_str());
+    v2Comp_h[cI] = (TH1F*)inFile_p->Get(("v2Comp_" + centStr + "_h").c_str());
 
     v2Raw_Trk_h[cI] = (TH1F*)inFile_p->Get(("v2Raw_" + centStr + "_Trk_h").c_str());
     v2RawCorr_Trk_h[cI] = (TH1F*)inFile_p->Get(("v2RawCorr_" + centStr + "_Trk_h").c_str());
     v2ObsCorr_Trk_h[cI] = (TH1F*)inFile_p->Get(("v2ObsCorr_" + centStr + "_Trk_h").c_str());
 
-    centerTitles({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2Raw_Trk_h[cI], v2RawCorr_Trk_h[cI], v2ObsCorr_Trk_h[cI]});
-    setSumW2({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2Raw_Trk_h[cI], v2RawCorr_Trk_h[cI], v2ObsCorr_Trk_h[cI]});
+    centerTitles({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2Comp_h[cI], v2Raw_Trk_h[cI], v2RawCorr_Trk_h[cI], v2ObsCorr_Trk_h[cI]});
+    setSumW2({v2Raw_PF_h[cI], v2RawCorr_PF_h[cI], v2ObsCorr_PF_h[cI], v2Comp_h[cI], v2Raw_Trk_h[cI], v2RawCorr_Trk_h[cI], v2ObsCorr_Trk_h[cI]});
 
     setColorStyleLabelTitle(v2Raw_PF_h[cI], vg.getColor(0), flowStyleSet[0], 12, 14);
     setColorStyleLabelTitle(v2RawCorr_PF_h[cI], vg.getColor(1), flowStyleSet[1], 12, 14);
     setColorStyleLabelTitle(v2ObsCorr_PF_h[cI], vg.getColor(2), flowStyleSet[2], 12, 14);
+    setColorStyleLabelTitle(v2Comp_h[cI], vg.getColor(0), flowStyleSet[0], 12, 14);
 
     setColorStyleLabelTitle(v2Raw_Trk_h[cI], vg.getColor(0), flowStyleSet[0], 12, 14);
     setColorStyleLabelTitle(v2RawCorr_Trk_h[cI], vg.getColor(1), flowStyleSet[1], 12, 14);
@@ -212,7 +216,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
 
   gSystem->cd("pdfDir");
 
-  CustomCanvas* canv_p = new CustomCanvas("canv_p", "", 450, 450);
+  CustomCanvas* canv_p = new CustomCanvas("canv_p", "", 600, 600);
   gStyle->SetOptStat(0);
 
   Float_t max=jamesMean_p->GetMaximum();
@@ -220,6 +224,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   if (v2RawCorr_Mean_PF_h->GetMaximum()>max) max=v2RawCorr_Mean_PF_h->GetMaximum();
   if (v2ObsCorr_Mean_PF_h->GetMaximum()>max) max=v2ObsCorr_Mean_PF_h->GetMaximum();
   jamesMean_p->SetMaximum(1.5*max);
+  jamesMean_p->SetTitle("Mean (PF)");
   jamesMean_p->Draw("HIST E1 P");
   v2Raw_Mean_PF_h->Draw("SAME HIST E1 P");
   v2RawCorr_Mean_PF_h->Draw("SAME HIST E1 P");
@@ -232,6 +237,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   if (v2RawCorr_Mean_Trk_h->GetMaximum()>max) max=v2RawCorr_Mean_Trk_h->GetMaximum();
   if (v2ObsCorr_Mean_Trk_h->GetMaximum()>max) max=v2ObsCorr_Mean_Trk_h->GetMaximum();
   jamesMean_p->SetMaximum(1.5*max);
+  jamesMean_p->SetTitle("Mean (Trk)");
   jamesMean_p->Draw("HIST E1 P");
   v2Raw_Mean_Trk_h->Draw("SAME HIST E1 P");
   v2RawCorr_Mean_Trk_h->Draw("SAME HIST E1 P");
@@ -244,6 +250,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   if (v2RawCorr_Sigma_PF_h->GetMaximum()>max) max=v2RawCorr_Sigma_PF_h->GetMaximum();
   if (v2ObsCorr_Sigma_PF_h->GetMaximum()>max) max=v2ObsCorr_Sigma_PF_h->GetMaximum();
   jamesSigma_p->SetMaximum(1.5*max);
+  jamesSigma_p->SetTitle("Sigma (PF)");
   jamesSigma_p->Draw("HIST P");
   v2Raw_Sigma_PF_h->Draw("SAME HIST P");
   v2RawCorr_Sigma_PF_h->Draw("SAME HIST P");
@@ -256,6 +263,7 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
   if (v2RawCorr_Sigma_Trk_h->GetMaximum()>max) max=v2RawCorr_Sigma_Trk_h->GetMaximum();
   if (v2ObsCorr_Sigma_Trk_h->GetMaximum()>max) max=v2ObsCorr_Sigma_Trk_h->GetMaximum();
   jamesSigma_p->SetMaximum(1.5*max);
+  jamesSigma_p->SetTitle("Sigma (Trk)");
   jamesSigma_p->Draw("HIST P");
   v2Raw_Sigma_Trk_h->Draw("SAME HIST P");
   v2RawCorr_Sigma_Trk_h->Draw("SAME HIST P");
@@ -324,6 +332,16 @@ int plotRecreateV2V3(const std::string inFileName, const std::string inJamesFile
 
     delete pads[0];
     delete pads[1];
+  }
+
+  for(Int_t cI = 0; cI < nCentBins; ++cI){
+    const std::string centStr = "Cent" + std::to_string(centBinsLow[cI]) + "to" + std::to_string(centBinsHi[cI]);
+    const std::string saveName = "v2Comp_" + centStr + "_" + dateStr + "_PF.pdf";
+
+    v2Comp_h[cI]->SetTitle(centStr.c_str());
+    v2Comp_h[cI]->DrawCopy("HIST P");
+
+    canv_p->SaveAs(saveName.c_str());
   }
 
   for(Int_t cI = 0; cI < nCentBins; ++cI){

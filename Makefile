@@ -40,11 +40,11 @@ bin/recreateV2V3_PosNeg.exe: src/recreateV2V3_PosNeg.C
 bin/recreateV2V3.exe: src/recreateV2V3.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3.exe src/recreateV2V3.C
 
-bin/recreateV2V3Tree.exe: src/recreateV2V3Tree.C
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3Tree.exe src/recreateV2V3Tree.C
+bin/recreateV2V3Tree.exe: src/recreateV2V3TreeEByE.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3Tree.exe src/recreateV2V3TreeEByE.C
 
-bin/recreateV2V3TreeHist.exe: src/recreateV2V3TreeHist.C
-	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3TreeHist.exe src/recreateV2V3TreeHist.C
+bin/recreateV2V3TreeHist.exe: src/recreateV2V3TreeHistEByE.C
+	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/recreateV2V3TreeHist.exe src/recreateV2V3TreeHistEByE.C
 
 bin/plotRecreateV2V3Tree.exe: src/plotRecreateV2V3Tree.C
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $(ROOT) -o bin/plotRecreateV2V3Tree.exe src/plotRecreateV2V3Tree.C
