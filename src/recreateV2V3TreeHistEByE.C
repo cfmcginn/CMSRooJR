@@ -31,9 +31,14 @@ int recreateV2V3TreeHist(const std::string inFileName)
   TH1F* v2Obs_PF_h[nCentBins];
   TH1F* v2ObsCorr_PF_h[nCentBins];
   TH1F* v2Comp_h[nCentBins];
+  TH1F* v2FT_h[nCentBins];
+  TH1F* v2Diff_h[nCentBins];
 
   TH1F* v2Raw_Trk_h[nCentBins];
   TH1F* v2RawCorr_Trk_h[nCentBins];
+  TH1F* v2Fit_Trk_h[nCentBins];
+  TH1F* v2Diff_Trk_h[nCentBins];
+  TH1F* v2DiffCorr_Trk_h[nCentBins];
   
   TH1F* v2Obs_Trk_h[nCentBins];
   TH1F* v2ObsCorr_Trk_h[nCentBins];
@@ -65,9 +70,14 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2Obs_PF_h[cI] = new TH1F(("v2Obs_" + centStr + "_PF_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2ObsCorr_PF_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_PF_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2Comp_h[cI] = new TH1F(("v2Comp_" + centStr + "_h").c_str(),";v_{2,ObsCorr}/v_{2,Tree};Counts", 150, 0.0, 2.0);
+    v2FT_h[cI] = new TH1F(("v2FT_" + centStr + "_h").c_str(),";v_{2,Tree};Counts", 150, 0.0, 0.6);
+    v2Diff_h[cI] = new TH1F(("v2Diff_" + centStr + "_h").c_str(),("v2ObsCorr-v2FromTree (" + centStr + ");v_{2};Counts").c_str(), 150, -0.6, 0.6);
 
     v2Raw_Trk_h[cI] = new TH1F(("v2Raw_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2RawCorr_Trk_h[cI] = new TH1F(("v2RawCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2Fit_Trk_h[cI] = new TH1F(("v2Fit_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
+    v2Diff_Trk_h[cI] = new TH1F(("v2Diff_" + centStr + "_Trk_h").c_str(), ("v2RawTrk-v2FitTrk (" + centStr + ");v_{2};Counts").c_str(), 150, -0.6, 0.6);
+    v2DiffCorr_Trk_h[cI] = new TH1F(("v2DiffCorr_" + centStr + "_Trk_h").c_str(), ("v2RawTrkCorr-v2FitTrk (" + centStr + ");v_{2};Counts").c_str(), 150, -0.6, 0.6);
     v2Obs_Trk_h[cI] = new TH1F(("v2Obs_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
     v2ObsCorr_Trk_h[cI] = new TH1F(("v2ObsCorr_" + centStr + "_Trk_h").c_str(), ";v_{2};Counts", 150, 0.0, 0.6);
   }
@@ -272,6 +282,11 @@ int recreateV2V3TreeHist(const std::string inFileName)
     double weightTrk = 0.;
 
     Int_t trkCounter = 0;
+
+    const Int_t nPhiBins = std::fmax(10, trkPhi_p->size()/30);
+
+    TH1F* phi_h = new TH1F("tempPhi", ";#phi;Track counts (.3 < p_{T} < 3.,#eta>0)", nPhiBins, -TMath::Pi(), TMath::Pi());
+
     if(hasTrk){
       for(unsigned tI = 0; tI < trkPhi_p->size(); tI++){
         //      if(trkPt_p->at(tI) >= 2.4) continue;
@@ -287,11 +302,23 @@ int recreateV2V3TreeHist(const std::string inFileName)
         v2yRawTrkCorr += tempWeightTrk*TMath::Sin(2*(deltaEventPhi));
 
         weightTrk += tempWeightTrk;
+
+	phi_h->Fill(trkPhi_p->at(tI));
       }
     }
 
     if (weightTrk==0) continue;
+    /*
+    std::string flowFitForm = "[0]*(1. + 2.*([1]*TMath::Cos(2.*(x - " + std::to_string(eventPlane2) + ")) + [2]*TMath::Cos(3.*(x - " + std::to_string(eventPlane3) + "))))";    
+    TF1* flowFit_p = new TF1("flowFit", flowFitForm.c_str(), -TMath::Pi(), TMath::Pi());
+    flowFit_p->SetParameter(0, 10);
+    flowFit_p->SetParameter(1, 0);
+    flowFit_p->SetParameter(2, 0);
 
+    phi_h->Fit(flowFit_p, "Q", "", -TMath::Pi(), TMath::Pi());
+
+    double v2FitTrk = flowFit_p->GetParameter(1);
+    */
     if(hasTrk){
       v2xRawTrk /= (double)trkCounter;
       v2yRawTrk /= (double)trkCounter;
@@ -307,6 +334,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
       v2Raw_Trk_h[centPos]->Fill(v2RawTrk);
       v2RawCorr_Trk_h[centPos]->Fill(v2RawTrkCorr);
+      //      v2Fit_Trk_h[centPos]->Fill(v2FitTrk);
+      //      v2Diff_Trk_h[centPos]->Fill(v2RawTrk-v2FitTrk);
+      //      v2DiffCorr_Trk_h[centPos]->Fill(v2RawTrkCorr-v2FitTrk);
 
       //      std::cout<<"Trk Event "<<entry<<" v2xRawTrk, v2yRawTrk: "<<v2xRawTrk<<", "<<v2yRawTrk<<", "<<hiBin_<<", "<<hiEvt2Plane_<<"  (original trk tree entry: "<<entry_<<")"<<std::endl;
 
@@ -397,6 +427,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2Obs_PF_h[centPos]->Fill(v2ObsPF);
     v2ObsCorr_PF_h[centPos]->Fill(v2ObsPFCorr);
     v2Comp_h[centPos]->Fill(v2ObsPFCorr/v2FromTree_);
+    v2FT_h[centPos]->Fill(v2FromTree_);
+    v2Diff_h[centPos]->Fill(v2ObsPFCorr-v2FromTree_);
 
   }
 
@@ -494,6 +526,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
     v2Obs_PF_h[cI]->Write("", TObject::kOverwrite);
     v2ObsCorr_PF_h[cI]->Write("", TObject::kOverwrite);
     v2Comp_h[cI]->Write("", TObject::kOverwrite);
+    v2FT_h[cI]->Write("", TObject::kOverwrite);
+    v2Diff_h[cI]->Write("", TObject::kOverwrite);
 
     v2Raw_Mean_PF_h->SetBinContent(cI+1, v2Raw_PF_h[cI]->GetMean());
     v2Raw_Mean_PF_h->SetBinError(cI+1, v2Raw_PF_h[cI]->GetMeanError());
@@ -518,6 +552,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
     delete v2Raw_PF_h[cI];
     delete v2RawCorr_PF_h[cI];
     delete v2Comp_h[cI];
+    delete v2FT_h[cI];
+    delete v2Diff_h[cI];
 
     delete v2Obs_PF_h[cI];
     delete v2ObsCorr_PF_h[cI];
@@ -549,6 +585,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
     if(hasTrk){
       v2Raw_Trk_h[cI]->Write("", TObject::kOverwrite);
       v2RawCorr_Trk_h[cI]->Write("", TObject::kOverwrite);
+      v2Fit_Trk_h[cI]->Write("", TObject::kOverwrite);
+      v2Diff_Trk_h[cI]->Write("", TObject::kOverwrite);
+      v2DiffCorr_Trk_h[cI]->Write("", TObject::kOverwrite);
       
       v2Obs_Trk_h[cI]->Write("", TObject::kOverwrite);
       v2ObsCorr_Trk_h[cI]->Write("", TObject::kOverwrite);
@@ -576,6 +615,9 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
     delete v2Raw_Trk_h[cI];
     delete v2RawCorr_Trk_h[cI];
+    delete v2Fit_Trk_h[cI];
+    delete v2Diff_Trk_h[cI];
+    delete v2DiffCorr_Trk_h[cI];
 
     delete v2Obs_Trk_h[cI];
     delete v2ObsCorr_Trk_h[cI];
