@@ -9,8 +9,10 @@
 #include "TMath.h"
 #include "TDatime.h"
 #include "TF1.h"
+#include "TRandom3.h"
 
 #include "include/doGlobalDebug.h"
+#include "include/mntToXRootdFileString.h"
 
 bool dR(float eta1, float phi1, float eta2, float phi2, float R){
   return ((eta1-eta2)*(eta1-eta2)+(phi1-phi2)*(phi1-phi2)<=R*R);
@@ -462,7 +464,7 @@ int recreateV2V3TreeHist(const std::string inFileName)
     }
 
     for(Int_t sI = 0; sI < nSystR; sI++){
-      Double_t R = nSystR[sI];
+      Double_t R = systR[sI];
 
       // Random eta, phi position
       TRandom3* rand = new TRandom3();
@@ -472,7 +474,7 @@ int recreateV2V3TreeHist(const std::string inFileName)
 
       // Calculate sumpt
       Double_t sumpt = 0.;
-      for (int pfI = 0; pfI < eByEPt_p->size(); pfI++){
+      for (unsigned pfI = 0; pfI < eByEPt_p->size(); pfI++){
 	if (dR(eta_c, phi_c, eByEEta_p->at(pfI), eByEPhi_p->at(pfI), R)) sumpt += eByEPt_p->at(pfI);
       }
 
@@ -495,8 +497,8 @@ int recreateV2V3TreeHist(const std::string inFileName)
       }
 
       // Fill histograms
-      systRaw_h[cI][sI]->Fill(sumpt-rhoSumRaw);
-      systFit_h[cI][sI]->Fill(sumpt-rhoSumFit);
+      systRaw_h[centPos][sI]->Fill(sumpt-rhoSumRaw);
+      systFit_h[centPos][sI]->Fill(sumpt-rhoSumFit);
     }
 
   }
